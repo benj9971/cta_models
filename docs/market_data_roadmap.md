@@ -79,7 +79,8 @@ the eventual Bloomberg contract-month pull.
 - Add each market's independently verified price panel and roll calendar.
 - Test one-day-lagged exposure, cost, roll, and contract-dollar P&L against
   buy-and-hold and single-horizon trend baselines, with a held-out period.
-- Keep RSI-14 as a separate close-only experiment until its out-of-sample
+- Compute close-only Wilder RSI-14 with `cta_models.indicators.rsi`. Keep it as
+  a separate experiment until its out-of-sample
   contribution to positioning calibration and/or returns is established.
 
 Sources: https://publicreporting.cftc.gov/stories/s/Disaggregated-Futures-Only/ubmb-6exi/ ;
