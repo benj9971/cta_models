@@ -2,9 +2,8 @@
 
 ## Scope
 
-COMEX copper (`COMEX_HG`), NYMEX platinum (`NYMEX_PL`), and SGX IODEX 62% Fe
-iron ore (`SGX_IO62`) have market definitions. They have **no bundled daily
-futures price series** and cannot produce current model scores yet. The dashboard
+COMEX copper (`COMEX_HG`), gold (`COMEX_GC`), silver (`COMEX_SI`), NYMEX platinum (`NYMEX_PL`), and SGX IODEX 62% Fe
+iron ore (`SGX_IO62`) have market definitions and bundled provisional continuous price proxies, with gold and silver added in October 2026. See `docs/public_data_and_proxies.md` for coverage and limits. These are not verified contract-level settlement histories and must not be used for executable backtests. The dashboard
 supports a validated manual upload using `date,market,contract,close,signal_close,source`.
 The `contract_size` metadata is in `contract_unit`; SGX size remains unset until
 the exact contract is verified against current specifications. Never enter a
@@ -12,7 +11,7 @@ spot index as if it were a monthly futures settlement.
 
 ## Free public positioning benchmark
 
-Run from the repository root:
+Run from the repository root (select `--markets COMEX_GC COMEX_SI` and a separate output path for precious metals):
 
 ```bash
 python -m cta_models.cot --output dashboard/data/cftc_disaggregated_futures_only_hg_pl.csv
@@ -20,7 +19,7 @@ python -m cta_models.cot --output dashboard/data/cftc_disaggregated_futures_only
 
 The script calls CFTC's public Socrata dataset `72hh-3qpy`, paginates and
 validates the full disaggregated futures-only series for codes `085692` (COMEX
-copper) and `076651` (NYMEX platinum). CSV includes the Tuesday report date,
+copper), `076651` (NYMEX platinum), `088691` (COMEX gold), and `084691` (COMEX silver). By default the command requests copper and platinum; use the selector for gold and silver. CSV includes the Tuesday report date,
 managed-money long, short, spreading, net, open interest, and net/OI. It does
 not include options, actual CTA-only positions, or a verified release timestamp.
 The CFTC currently allows token-free public API use subject to reasonable use.
