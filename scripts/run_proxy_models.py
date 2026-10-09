@@ -22,6 +22,8 @@ from cta_models.model import compute_positions
 METALS = {
     "COMEX_HG": ("COMEX copper", "US cents/lb", "#ad6b29"),
     "NYMEX_PL": ("NYMEX platinum", "USD/troy oz", "#596bb1"),
+    "COMEX_GC": ("COMEX gold", "USD/troy oz", "#b99a45"),
+    "COMEX_SI": ("COMEX silver", "USD/troy oz", "#778792"),
     "SGX_IO62": ("Iron ore · CME proxy for SGX", "USD/dmt", "#567d59"),
 }
 
@@ -55,7 +57,7 @@ def plot(market, prices, positions, path, years=None):
     fig.text(.07, .925, f"{valid['date'].iloc[0].date()} to {valid['date'].iloc[-1].date()}   ·   "
              f"Latest position {exposure[-1]:+.1f}   ·   Quote {aligned['close'].iloc[-1]:,.2f} {unit}", fontsize=10)
     fig.text(.07, .025, "Daily vendor continuous futures quote; contract mapping and roll adjustment unverified. "
-             "Iron ore is CME TIO, not SGX FEF.\n"
+             + ("Iron ore is CME TIO, not SGX FEF.\n" if market == "SGX_IO62" else "\n") +
              "Signal-only research proxy; not observed CTA holdings or an executable futures backtest.",
              fontsize=9, color="#506171")
     fig.subplots_adjust(left=.075, right=.98, top=.875, bottom=.145)
@@ -67,9 +69,10 @@ def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--data-dir", type=Path, default=Path("dashboard/data"))
     parser.add_argument("--output-dir", type=Path, required=True)
+    parser.add_argument("--markets", nargs="+", choices=METALS, default=list(METALS))
     args = parser.parse_args()
     args.output_dir.mkdir(parents=True, exist_ok=True)
-    for market in METALS:
+    for market in args.markets:
         prices = load_csv(args.data_dir / f"{market.lower()}_yahoo_research_proxy.csv", market)
         positions = compute_positions(prices)
         out = args.output_dir / f"{market.lower()}_proxy_positions.csv"
