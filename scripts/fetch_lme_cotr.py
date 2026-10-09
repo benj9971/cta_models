@@ -1,7 +1,7 @@
 """Download public LME COT workbooks and preserve every position category.
 
 Requires: requests, openpyxl, xlrd. Run from repository root:
-python scripts/fetch_lme_cotr.py --output dashboard/data/lme_cotr_all_categories.csv
+python scripts/fetch_lme_cotr.py --output-dir dashboard/data
 The CSV is long form: market x report date x five categories x three buckets.
 Raw third-party XLS/XLSX files are not committed to the repository.
 """
@@ -113,7 +113,7 @@ def parse(item):
 
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--output", type=Path, required=True)
+    parser.add_argument("--output-dir", type=Path, required=True)
     parser.add_argument("--workers", type=int, default=4)
     args = parser.parse_args()
     discovered = links()
@@ -137,11 +137,12 @@ def main():
         if key not in latest or row["published_at_utc"] > latest[key]["published_at_utc"]:
             latest[key] = row
     data = sorted(latest.values(), key=lambda r: (r["market"], r["position_date"], r["category"], r["position_bucket"]))
-    args.output.parent.mkdir(parents=True, exist_ok=True)
-    with args.output.open("w", newline="", encoding="utf-8") as fh:
-        writer = csv.DictWriter(fh, fieldnames=FIELDS)
-        writer.writeheader()
-        writer.writerows(data)
+    args.output_dir.mkdir(parents=True, exist_ok=True)
+    for market in PAGES:
+        with (args.output_dir / f"{market.lower()}_cotr_all_categories.csv").open("w", newline="", encoding="utf-8") as fh:
+            writer = csv.DictWriter(fh, fieldnames=FIELDS)
+            writer.writeheader()
+            writer.writerows(r for r in data if r["market"] == market)
     for market in PAGES:
         dates = sorted({r["position_date"] for r in data if r["market"] == market})
         print(f"{market}: {len(dates)} dates, {dates[0]} to {dates[-1]}", flush=True)
