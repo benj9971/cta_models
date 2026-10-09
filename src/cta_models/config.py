@@ -8,21 +8,37 @@ class Market:
     commodity: str
     currency: str
     price_unit: str
-    contract_size_tonnes: float
+    contract_size: float | None
+    contract_unit: str
     convention: str
+
+    @property
+    def contract_size_tonnes(self) -> float | None:
+        """Legacy convenience for base metals; precious metals return None."""
+        if self.contract_size is None:
+            return None
+        if self.contract_unit == "metric tonnes":
+            return self.contract_size
+        if self.contract_unit == "pounds":
+            return self.contract_size * 0.00045359237
+        return None
 
 
 MARKETS = {
-    "LME_CU": Market("LME_CU", "LME", "copper", "USD", "USD/t", 25.0,
+    "LME_CU": Market("LME_CU", "LME", "copper", "USD", "USD/t", 25.0, "metric tonnes",
                      "rolling three-month prompt; use a consistent closing quote"),
-    "LME_NI": Market("LME_NI", "LME", "nickel", "USD", "USD/t", 6.0,
+    "LME_NI": Market("LME_NI", "LME", "nickel", "USD", "USD/t", 6.0, "metric tonnes",
                      "rolling three-month prompt; use a consistent published quote"),
-    "LME_ZN": Market("LME_ZN", "LME", "zinc", "USD", "USD/t", 25.0,
+    "LME_ZN": Market("LME_ZN", "LME", "zinc", "USD", "USD/t", 25.0, "metric tonnes",
                      "rolling three-month prompt; use a consistent published quote"),
-    "LME_AL": Market("LME_AL", "LME", "aluminium", "USD", "USD/t", 25.0,
+    "LME_AL": Market("LME_AL", "LME", "aluminium", "USD", "USD/t", 25.0, "metric tonnes",
                      "rolling three-month prompt; use a consistent published quote"),
-    "COMEX_HG": Market("COMEX_HG", "COMEX", "copper", "USD", "US cents/lb", 11.33980925,
+    "COMEX_HG": Market("COMEX_HG", "COMEX", "copper", "USD", "US cents/lb", 25000.0, "pounds",
                        "monthly futures; signal_close must be roll adjusted"),
+    "NYMEX_PL": Market("NYMEX_PL", "NYMEX", "platinum", "USD", "USD/troy oz", 50.0, "troy ounces",
+                       "monthly futures; signal_close must be roll adjusted"),
+    "SGX_IO62": Market("SGX_IO62", "SGX", "iron ore 62% Fe CFR China", "USD", "USD/dmt", None, "metric tonnes",
+                       "IODEX monthly futures; verify contract size and index history; roll-adjust signal_close"),
 }
 
 
@@ -45,4 +61,3 @@ class ModelConfig:
             raise ValueError("weights must sum to one")
         if self.volatility_lookback < 2 or self.volatility_target <= 0 or self.volatility_floor <= 0:
             raise ValueError("invalid volatility settings")
-
