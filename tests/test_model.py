@@ -64,6 +64,14 @@ class CopperModelTests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "OHLC"):
             validate_prices(invalid)
 
+    def test_accepts_complete_close_only_series(self):
+        prices = self.pair["LME_CU"].drop(columns=["open", "high", "low"])
+        validated = validate_prices(prices)
+        self.assertEqual(len(compute_positions(validated)), 400)
+        with self.assertRaisesRegex(ValueError, "all of open, high and low"):
+            validate_prices(self.pair["LME_CU"].drop(columns=["high"]))
+
 
 if __name__ == "__main__":
     unittest.main()
+
