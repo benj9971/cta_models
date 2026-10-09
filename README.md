@@ -1,7 +1,7 @@
-# Copper CTA positioning proxy
+# Metals CTA positioning proxy
 
 An open, auditable **model estimate** of what a group of trend-following rules
-would hold in LME and COMEX copper. It is intended as context for discretionary
+would hold in LME copper, LME nickel and COMEX copper. It is intended as context for discretionary
 trading. It does **not** observe CTA holdings or forecast actual CTA order flow.
 
 The initial runnable demo uses **invented prices**. No date or number in its
@@ -47,7 +47,7 @@ estimate are held fixed. Thus a 10-percentage-point selling trigger is a
 conditional **model exposure** change, not a prediction of contracts sold.
 The grid searches only within ±25% of the current price.
 
-## Using real daily data later
+## Using real daily data
 
 ```bash
 cta-models analyze --market LME_CU --input your_daily_copper.csv --out-dir output/lme
@@ -73,7 +73,26 @@ published quote per source date, not open/high/low/close bars. It is suitable
 for a signal stress test, but its percentage changes are not executable
 futures P&L. Record the source and quote convention when importing it.
 
-`LME_CU` is USD/t on the rolling three-month prompt; `COMEX_HG` is US cents/lb
+The included nickel file is `dashboard/data/lme_nickel_3m_westmetall_2008-2026_import.csv`.
+Analyse it with:
+
+```bash
+cta-models analyze --market LME_NI --input dashboard/data/lme_nickel_3m_westmetall_2008-2026_import.csv --out-dir output/lme_nickel
+```
+
+It contains 4,615 dated USD/t quotes from 17 June 2008 through 8 October 2026,
+from the [Westmetall nickel yearly tables](https://www.westmetall.com/en/markdaten.php?action=table&field=LME_Ni_cash&year=2026).
+Earlier 2008 quotes through 19 February are excluded from the import series
+because the source has no nickel three-month values until 17 June, a roughly
+four-month gap that would distort observation-based horizons. One duplicate
+Saturday quote was also excluded. The source has no three-month values on
+8–25 March 2022, between the 7 March squeeze quote and 28 March resumption.
+The model counts published observations; its signal can be inspected across
+this interruption, but a proxy return over the 21-day gap is not an executable
+trade and the 2022 episode needs separate robustness checks. Do not interpret
+the full-period backtest as a realistic trading result.
+
+`LME_CU` and `LME_NI` are USD/t on the rolling three-month prompt; `COMEX_HG` is US cents/lb
 on a monthly contract. Market specifications live in `config.py` so further
 metals and exchanges can be added without changing the signal code. The
 synthetic COMEX contract names and LME prompt dates are illustrative labels,
