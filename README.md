@@ -53,14 +53,25 @@ The grid searches only within ±25% of the current price.
 cta-models analyze --market LME_CU --input your_daily_copper.csv --out-dir output/lme
 ```
 
-CSV columns: `date,market,contract,open,high,low,close,signal_close,source`.
+Required CSV columns: `date,market,contract,close,signal_close,source`.
+If true OHLC is available, supply **all three** additional `open,high,low`
+columns. Never fill missing OHLC with a single daily quote.
 An optional `available_at` column is a UTC timestamp when the price was first
 available. The input must contain one market and unique dates. The `close`
-and OHLC columns are **raw quotes for the active contract**; `signal_close`
-is a **documented, roll-adjusted, continuous signal series in the same price
-unit**. There is intentionally no implicit stitch based on contract labels:
+and any OHLC columns are **raw quotes for the active contract**; `signal_close`
+is a **documented continuous signal series in the same price unit**. For
+monthly futures this normally requires a documented roll adjustment. An LME
+rolling three-month published quote can be used directly for research, with
+`contract=3M_ROLLING` and `signal_close=close`; the schema's `close` name is
+only an import alias and does not turn that quote into an exchange close.
+There is intentionally no implicit stitch based on contract labels:
 that would turn a futures roll gap into a false trading signal. The initial
-version requires the adjusted series from a vetted data preparation step.
+version requires the continuous series from a vetted data preparation step.
+
+The public Westmetall LME three-month series starts in 2008 and contains one
+published quote per source date, not open/high/low/close bars. It is suitable
+for a signal stress test, but its percentage changes are not executable
+futures P&L. Record the source and quote convention when importing it.
 
 `LME_CU` is USD/t on the rolling three-month prompt; `COMEX_HG` is US cents/lb
 on a monthly contract. Market specifications live in `config.py` so further
@@ -72,8 +83,9 @@ Before analysing real data we will choose the exact closing-price convention,
 roll methodology, holiday calendar, Bloomberg fields and as-of timing for each
 exchange. The importer checks the optional availability timestamp but cannot
 independently prove its accuracy. Bloomberg integration, trade P&L, CFTC
-calibration, LME positioning benchmarks, contract/tonnage estimates and a web
-dashboard are future stages; none are represented by the demo.
+calibration, LME positioning benchmarks and contract/tonnage estimates are
+future stages; none are represented by the demo. The optional dashboard is
+described in `dashboard/README.md`.
 
 ## Repository layout
 
@@ -82,3 +94,4 @@ validates inputs; `synthetic.py` creates controlled scenarios; `model.py`
 computes exposure; `scenarios.py` finds conditional changes; `report.py`
 exports research output; `cli.py` runs the workflow. `tests/` checks the
 primary accounting and timing risks.
+
