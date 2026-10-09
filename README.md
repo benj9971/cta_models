@@ -86,7 +86,8 @@ Earlier 2008 quotes through 19 February are excluded from the import series
 because the source has no nickel three-month values until 17 June, a roughly
 four-month gap that would distort observation-based horizons. One duplicate
 Saturday quote was also excluded. The source has no three-month values on
-8–25 March 2022, between the 7 March squeeze quote and 28 March resumption.
+8–25 March 2022, between the 7 March squeeze quote and the source's next
+three-month quote on 28 March. LME trading itself resumed on 16 March.
 The model counts published observations; its signal can be inspected across
 this interruption, but a proxy return over the 21-day gap is not an executable
 trade and the 2022 episode needs separate robustness checks. Do not interpret
