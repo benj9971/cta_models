@@ -147,7 +147,7 @@ class DashboardUITests(unittest.TestCase):
 
     def test_reported_comparison_for_six_metals_and_rsi(self):
         app = self.app()
-        self.assertTrue(any(s.value == "RSI(14) · daily quote" for s in app.subheader))
+        self.assertTrue(any(s.value == "RSI(14) · daily calculation" for s in app.subheader))
         next(r for r in app.radio if "Reported comparison" in r.options).set_value("Reported comparison").run()
         self.assertFalse(app.exception)
         self.assertFalse(app.error)
@@ -158,6 +158,8 @@ class DashboardUITests(unittest.TestCase):
             self.assertFalse(app.exception)
             self.assertFalse(app.error)
         next(r for r in app.radio if "Last 3 years" in r.options).set_value("Full history").run()
+        self.assertFalse(app.exception)
+        next(r for r in app.radio if r.label == "Chart frequency").set_value("Daily").run()
         self.assertFalse(app.exception)
 
     def test_bundled_continuous_proxy_blocks_backtest(self):
