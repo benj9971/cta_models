@@ -18,7 +18,11 @@ HISTORICAL_FILES = {
     "LME_NI": ("LME nickel history (2008–2026)", Path(__file__).resolve().parent / "data" / "lme_nickel_3m_westmetall_2008-2026_import.csv"),
     "LME_ZN": ("LME zinc history (2008–2026)", Path(__file__).resolve().parent / "data" / "lme_zinc_3m_westmetall_2008-2026_staged.csv"),
     "LME_AL": ("LME aluminium history (2008–2026)", Path(__file__).resolve().parent / "data" / "lme_aluminium_3m_westmetall_2008-2026_staged.csv"),
+    "COMEX_HG": ("COMEX copper Yahoo continuous proxy (2000–2026)", Path(__file__).resolve().parent / "data" / "comex_hg_yahoo_research_proxy.csv"),
+    "NYMEX_PL": ("NYMEX platinum Yahoo continuous proxy (2010–2026)", Path(__file__).resolve().parent / "data" / "nymex_pl_yahoo_research_proxy.csv"),
+    "SGX_IO62": ("Iron ore CME TIO proxy for SGX (2010–2026)", Path(__file__).resolve().parent / "data" / "sgx_io62_yahoo_research_proxy.csv"),
 }
+PROXY_MARKETS = {"COMEX_HG", "NYMEX_PL", "SGX_IO62"}
 HISTORICAL_LABELS = {label: (market, path) for market, (label, path) in HISTORICAL_FILES.items()}
 
 st.set_page_config(page_title="Metals CTA", page_icon="📈", layout="centered")
@@ -50,7 +54,8 @@ with st.expander("Load or refresh data", expanded="run" not in st.session_state)
                        None if source == "Synthetic demo" else upload.getvalue())
             new_run = build_run(market, payload)
             st.session_state["run"] = new_run
-            st.session_state["run_origin"] = ("historical" if source in HISTORICAL_LABELS else
+            st.session_state["run_origin"] = ("proxy" if source in HISTORICAL_LABELS and market in PROXY_MARKETS else
+                                               "historical" if source in HISTORICAL_LABELS else
                                                "synthetic" if source == "Synthetic demo" else "upload")
             st.session_state.pop("load_error", None)
         except (OSError, ValueError, KeyError, IndexError, TypeError, UnicodeError) as error:
@@ -72,6 +77,8 @@ elif st.session_state.get("run_origin") == "historical":
     st.info("WESTMETALL LME 3-MONTH HISTORY — one published daily quote, USD/t. The CSV's close field is an import alias, not a closing bar. No live feed or executable P&L is implied.")
     if snapshot.market == "LME_NI":
         st.warning("NICKEL DATA NOTE — this source has no three-month quote from 8–25 March 2022. Its March 7 squeeze quote and next quote on March 28 are separated by a 21-day gap; LME trading resumed on March 16. Model signals span observed quote sessions, and proxy backtest returns across this interval are not executable.")
+elif st.session_state.get("run_origin") == "proxy":
+    st.warning("SIGNAL-ONLY PRICE PROXY — Yahoo continuous futures quotes. Contract months, roll timing and adjustment are unverified. Iron ore uses CME TIO, not an SGX FEF settlement. These are model estimates, not observed CTA holdings or executable P&L.")
 else:
     st.info("UPLOADED DATA — source and roll methodology are user supplied. No live feed is connected.")
 if not run.synthetic:
@@ -129,6 +136,9 @@ elif page == "Price scenarios":
             st.error(str(error))
 
 elif page == "Backtests":
+    if st.session_state.get("run_origin") == "proxy":
+        st.warning("Backtests are unavailable for these bundled Yahoo continuous price proxies. Supply a verified, timestamped and roll-aware return series to evaluate futures performance.")
+        st.stop()
     st.subheader("Research backtest")
     st.warning("Research performance, not executable futures P&L. Positions are lagged one observation. Adjusted-price percentage returns may be distorted by the roll method. Funding, margin, cash yield and market impact are excluded.")
     st.caption("Execution assumption: the previous observation's signal is available and executable before the measured return interval begins. Availability timestamps are diagnostic only; the test does not enforce an exchange closing calendar. Supplied returns require the same timing alignment.")

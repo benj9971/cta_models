@@ -1,0 +1,23 @@
+# Public positioning and research price proxies
+
+## LME commitments of traders
+
+`dashboard/data/lme_{cu,al,zn,ni}_cotr_all_categories.csv` contains the public weekly workbooks linked on the LME copper, aluminium, zinc and nickel COT pages, as fetched 9 October 2026. Coverage is 3 January 2020 through 2 October 2026: 349 copper, 350 aluminium, 351 zinc and 352 nickel distinct position dates. There were 1,403 workbook links and 1,402 distinct reports after retaining the latest published copy of a duplicate date.
+
+These CSVs retain **all five published trader categories**, each risk-reducing, other and total bucket, long and short lots, net lots, week-on-week changes, percent of open interest, trader counts where provided, position date, publication timestamp and source workbook URL. One row is a market/date/category/bucket. Zero positions remain zero. The parser verifies that risk-reducing plus other lots equals total lots. This is exchange-reported category positioning, not the CTA model and not a census of CTA holdings. The investment-funds category is only one of five categories.
+
+To update: `python scripts/fetch_lme_cotr.py --output-dir dashboard/data` (requires `requests`, `openpyxl`, `xlrd`). The script refuses to save a partial archive when any linked workbook fails. The LME pages currently link back to January 2020; this dataset makes no claim of complete pre-2020 history. Check LME terms before redistributing or using these reports outside permitted research.
+
+## Daily prices used for exploratory signals
+
+| Input file | Vendor ticker | Underlying proxy | Coverage through 8 Oct 2026 | Latest quote |
+| --- | --- | --- | --- | --- |
+| `comex_hg_yahoo_research_proxy.csv` | `HG=F` | COMEX copper continuous futures | 30 Aug 2000–8 Oct 2026 | 651.90 US cents/lb |
+| `nymex_pl_yahoo_research_proxy.csv` | `PL=F` | NYMEX platinum continuous futures | 4 Jan 2010–8 Oct 2026 | 1625.70 USD/troy oz |
+| `sgx_io62_yahoo_research_proxy.csv` | `TIO=F` | **CME iron ore** used as a proxy for SGX 62% iron ore | 14 Oct 2010–8 Oct 2026 | 90.98 USD/dmt |
+
+Source: Yahoo Finance chart API. Run `python scripts/fetch_research_price_proxies.py --output-dir dashboard/data --as-of YYYY-MM-DD` to refresh. The platinum vendor history before 2010 has long gaps and is omitted from the model-ready file. The files contain one daily close and an identical `signal_close` alias, with market, contract and source labels; no intraday range is inferred. The vendor's contract month mapping, roll selection, adjustments and timestamp conventions are unverified. `TIO=F` is **not SGX FEF**; its basis, index reference and contract conventions may differ. These are research signals only. Do not treat percentage returns on these series as executable futures performance. The dashboard blocks backtests for bundled proxies.
+
+From the repository root, run `python scripts/run_proxy_models.py --data-dir dashboard/data --output-dir <your-output-folder>` for position CSVs and full-history/three-year charts. The model uses 20/60/120/252 session horizons with 10/15/35/40% weights and a volatility risk scale. A score of +100 or −100 represents its modeled risk limit, **not actual CTA contracts or exchange-observed holdings**. On 8 October 2026 the provisional scores are COMEX copper +25.9, NYMEX platinum −22.0 and CME iron ore proxy for SGX −67.5. The model takes signals from close alone; RSI(14) can likewise be computed from closes without high/low or intraday bars.
+
+Next data upgrade: obtain exchange-specific dated contract settlements, expiration calendars, volume/open interest and a documented roll rule, plus LME/CME/SGX OHLC where available. Build adjusted signal histories separately from a tradable contract-level return series with timestamp and costs before interpreting a backtest. Use the exchange positioning reports for retrospective calibration and compare the model estimates with outside CTA estimates when available.
