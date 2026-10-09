@@ -170,7 +170,7 @@ class DashboardUITests(unittest.TestCase):
         self.assertEqual(app.session_state["run"].snapshot.market, "NYMEX_PL")
         next(r for r in app.radio if "Backtests" in r.options).set_value("Backtests").run()
         self.assertFalse(app.exception)
-        self.assertTrue(any("Backtests are unavailable" in w.message for w in app.warning))
+        self.assertTrue(any("Backtests are unavailable" in w.value for w in app.warning))
 
 
 if __name__ == "__main__":
