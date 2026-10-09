@@ -44,8 +44,8 @@ with st.expander("Load or refresh data", expanded="run" not in st.session_state)
                 raise ValueError("Choose a CSV before loading")
             if source in HISTORICAL_LABELS and market != HISTORICAL_LABELS[source][0]:
                 raise ValueError(f"The selected history is for {HISTORICAL_LABELS[source][0]}; select that market")
-            if source == "Synthetic demo" and market != "LME_CU":
-                raise ValueError("The synthetic demo is for LME copper only; choose matching history or upload a CSV")
+            if source == "Synthetic demo" and market not in ("LME_CU", "COMEX_HG"):
+                raise ValueError("The synthetic demo is for copper only; choose matching history or upload a CSV")
             payload = (HISTORICAL_LABELS[source][1].read_bytes() if source in HISTORICAL_LABELS else
                        None if source == "Synthetic demo" else upload.getvalue())
             new_run = build_run(market, payload)
