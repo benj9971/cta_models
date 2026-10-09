@@ -47,9 +47,11 @@ is the total, row 11 the non-risk-reducing positions. A robust import should:
    position date for descriptive calibration; preserve publication timestamps
    for any predictive use. LME's Investment Funds group is not a CTA-only group.
 
-SGX iron ore has no CFTC equivalent. Its public exchange research and weekly
-participant-segment publications merit a separate review; do not equate their
-fund categories to CFTC managed money without checking definitions.
+SGX iron ore has no CFTC equivalent, but SGX's public AER weekly report plots
+IODEX iron ore net and gross futures-equivalent positions by participant
+segment, including Managed Money. Check whether underlying numerical data are
+available from SGX; the PDF charts alone are not an exact historical series.
+Do not equate SGX's category to CFTC managed money without checking definitions.
 
 ## Futures prices and realistic returns
 
@@ -83,5 +85,6 @@ the eventual Bloomberg contract-month pull.
 Sources: https://publicreporting.cftc.gov/stories/s/Disaggregated-Futures-Only/ubmb-6exi/ ;
 https://www.lme.com/market-data/reports-and-data/commitments-of-traders ;
 https://www.sgx.com/research-education/derivatives ;
+https://api2.sgx.com/sites/default/files/2026-07/AER%20Weekly%20Report%2020260710.pdf ;
 https://rulebook.sgx.com/rulebook/appendix-1-final-settlement-price ;
 https://www.cmegroup.com/market-data/real-time-and-historical-data.html .
