@@ -37,6 +37,10 @@ MARKETS = {
                        "monthly futures; signal_close must be roll adjusted"),
     "NYMEX_PL": Market("NYMEX_PL", "NYMEX", "platinum", "USD", "USD/troy oz", 50.0, "troy ounces",
                        "monthly futures; signal_close must be roll adjusted"),
+    "COMEX_GC": Market("COMEX_GC", "COMEX", "gold", "USD", "USD/troy oz", 100.0, "troy ounces",
+                       "monthly futures; signal_close must be roll adjusted"),
+    "COMEX_SI": Market("COMEX_SI", "COMEX", "silver", "USD", "USD/troy oz", 5000.0, "troy ounces",
+                       "monthly futures; signal_close must be roll adjusted"),
     "SGX_IO62": Market("SGX_IO62", "SGX", "iron ore 62% Fe CFR China", "USD", "USD/dmt", None, "metric tonnes",
                        "IODEX monthly futures; verify contract size and index history; roll-adjust signal_close"),
 }
