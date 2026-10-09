@@ -69,7 +69,7 @@ if run.synthetic:
 elif st.session_state.get("run_origin") == "historical":
     st.info("WESTMETALL LME 3-MONTH HISTORY — one published daily quote, USD/t. The CSV's close field is an import alias, not a closing bar. No live feed or executable P&L is implied.")
     if snapshot.market == "LME_NI":
-        st.warning("NICKEL DATA NOTE — March 2022 has no published three-month quote from 8–25 March in this source. The March 7 squeeze and March 28 resumption are separated by a 21-day gap. Model signals span observed sessions; proxy backtest returns across this interval are not executable.")
+        st.warning("NICKEL DATA NOTE — this source has no three-month quote from 8–25 March 2022. Its March 7 squeeze quote and next quote on March 28 are separated by a 21-day gap; LME trading resumed on March 16. Model signals span observed quote sessions, and proxy backtest returns across this interval are not executable.")
 else:
     st.info("UPLOADED DATA — source and roll methodology are user supplied. No live feed is connected.")
 if not run.synthetic:
