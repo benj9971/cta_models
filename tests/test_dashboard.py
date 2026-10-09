@@ -69,9 +69,13 @@ class DashboardUITests(unittest.TestCase):
         from streamlit.testing.v1 import AppTest
         return AppTest.from_file(str(Path(__file__).resolve().parents[1] / "dashboard" / "app.py"), default_timeout=30).run()
 
-    def test_manual_load_and_views(self):
+    def test_included_history_and_manual_load(self):
         app = self.app()
-        self.assertNotIn("run", app.session_state)
+        self.assertFalse(app.exception)
+        self.assertEqual(len(app.session_state["run"].prices), 4743)
+        self.assertFalse(app.session_state["run"].synthetic)
+        self.assertEqual(str(app.session_state["run"].snapshot.as_of.date()), "2026-10-08")
+        next(r for r in app.radio if "Synthetic demo" in r.options).set_value("Synthetic demo")
         app.button[0].click().run()
         self.assertFalse(app.exception)
         self.assertTrue(app.session_state["run"].synthetic)
@@ -90,7 +94,6 @@ class DashboardUITests(unittest.TestCase):
 
     def test_failed_load_preserves_previous_run(self):
         app = self.app()
-        app.button[0].click().run()
         loaded_at = app.session_state["run"].loaded_at
         next(r for r in app.radio if "Upload CSV" in r.options).set_value("Upload CSV")
         app.button[0].click().run()
@@ -101,6 +104,7 @@ class DashboardUITests(unittest.TestCase):
     def test_comex_custom_scenario_matches_engine(self):
         app = self.app()
         app.selectbox[0].select("COMEX_HG")
+        next(r for r in app.radio if "Synthetic demo" in r.options).set_value("Synthetic demo")
         app.button[0].click().run()
         self.assertEqual(app.session_state["run"].snapshot.market, "COMEX_HG")
         next(r for r in app.radio if "Positioning" in r.options).set_value("Price scenarios").run()
@@ -112,7 +116,6 @@ class DashboardUITests(unittest.TestCase):
 
     def test_short_history_backtest_is_graceful(self):
         app = self.app()
-        app.button[0].click().run()
         prices = app.session_state["run"].prices.iloc[:253]
         app.session_state["run"] = build_run("LME_CU", prices.to_csv(index=False).encode())
         next(r for r in app.radio if "Positioning" in r.options).set_value("Backtests").run()
