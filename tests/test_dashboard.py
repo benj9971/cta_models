@@ -145,7 +145,7 @@ class DashboardUITests(unittest.TestCase):
         self.assertEqual(len(app.session_state["run"].prices), 4615)
         self.assertTrue(app.warning)
 
-    def test_reported_comparison_for_four_metals_and_rsi(self):
+    def test_reported_comparison_for_six_metals_and_rsi(self):
         app = self.app()
         self.assertTrue(any(s.value == "RSI(14) · daily quote" for s in app.subheader))
         next(r for r in app.radio if "Reported comparison" in r.options).set_value("Reported comparison").run()
@@ -153,7 +153,7 @@ class DashboardUITests(unittest.TestCase):
         self.assertFalse(app.error)
         self.assertTrue(any(s.value == "Conditional price levels" for s in app.subheader))
         self.assertEqual(len(app.dataframe), 2)
-        for market in ("NYMEX_PL", "LME_NI", "LME_AL", "LME_CU"):
+        for market in ("NYMEX_PL", "COMEX_GC", "COMEX_SI", "LME_NI", "LME_AL", "LME_CU"):
             next(s for s in app.selectbox if s.label == "Comparison market").set_value(market).run()
             self.assertFalse(app.exception)
             self.assertFalse(app.error)
