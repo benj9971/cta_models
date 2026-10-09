@@ -27,6 +27,8 @@ from cta_models.scenarios import scenario_table, trigger_levels
 DATA = Path(__file__).resolve().parents[1] / "dashboard" / "data"
 MARKETS = {
     "NYMEX_PL": ("NYMEX platinum", "nymex_pl_yahoo_research_proxy.csv", "USD/troy oz", "#6176a9"),
+    "COMEX_GC": ("COMEX gold", "comex_gc_yahoo_research_proxy.csv", "USD/troy oz", "#b99a45"),
+    "COMEX_SI": ("COMEX silver", "comex_si_yahoo_research_proxy.csv", "USD/troy oz", "#778792"),
     "LME_NI": ("LME nickel", "lme_nickel_3m_westmetall_2008-2026_import.csv", "USD/t", "#8573a1"),
     "LME_AL": ("LME aluminium", "lme_aluminium_3m_westmetall_2008-2026_staged.csv", "USD/t", "#3a7c91"),
     "LME_CU": ("LME copper", "lme_copper_3m_westmetall_2008-2026_import.csv", "USD/t", "#b47537"),
@@ -34,8 +36,10 @@ MARKETS = {
 
 
 def reported(data_dir: Path, market: str) -> pd.DataFrame:
-    if market == "NYMEX_PL":
-        reports = pd.read_csv(data_dir / "cftc_disaggregated_futures_only_hg_pl.csv")
+    if market in {"NYMEX_PL", "COMEX_GC", "COMEX_SI"}:
+        cot_file = ("cftc_disaggregated_futures_only_gc_si.csv" if market in {"COMEX_GC", "COMEX_SI"}
+                    else "cftc_disaggregated_futures_only_hg_pl.csv")
+        reports = pd.read_csv(data_dir / cot_file)
         reports = reports.loc[reports["market"] == market].copy()
         reports["position_date"] = pd.to_datetime(reports["report_date"])
         reports["reported_net"] = reports["managed_money_net"]
@@ -133,7 +137,7 @@ def chart(market: str, daily: pd.DataFrame, weekly: pd.DataFrame, path: Path,
              f" ({latest['reported_net_pct_oi']:+.1f}% OI) on {latest['position_date'].date()}", fontsize=10)
     fig.text(.08, .027, "Weekly report plotted at its POSITION date; released later (LME usually Tuesday, CFTC usually Friday). "
              "Do not trade on the report before release.\n"
-             "LME: investment funds and rolling 3M quote. Platinum: CFTC futures-only managed money and unverified Yahoo continuous quote. "
+             "LME: investment funds and rolling 3M quote. Precious metals: CFTC futures-only managed money and unverified Yahoo continuous quote. "
              "Model is not observed CTA holdings.", fontsize=8.8, color="#4e5f6e")
     fig.subplots_adjust(left=.085, right=.91, top=.90, bottom=.125)
     fig.savefig(path, dpi=150, facecolor=fig.get_facecolor())
@@ -144,11 +148,11 @@ def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--data-dir", type=Path, default=DATA)
     parser.add_argument("--output-dir", type=Path, required=True)
-    parser.add_argument("--market", choices=[*MARKETS, "all"], default="all")
+    parser.add_argument("--markets", nargs="+", choices=MARKETS, default=list(MARKETS))
     args = parser.parse_args()
     args.output_dir.mkdir(parents=True, exist_ok=True)
     summaries = []
-    for market in MARKETS if args.market == "all" else [args.market]:
+    for market in args.markets:
         prices, daily, weekly = build(market, args.data_dir)
         stem = market.lower()
         weekly.to_csv(args.output_dir / f"{stem}_model_vs_reported_weekly.csv", index=False)
