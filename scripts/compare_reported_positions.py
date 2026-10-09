@@ -32,6 +32,7 @@ MARKETS = {
     "COMEX_SI": ("COMEX silver", "comex_si_yahoo_research_proxy.csv", "USD/troy oz", "#778792"),
     "LME_NI": ("LME nickel", "lme_nickel_3m_westmetall_2008-2026_import.csv", "USD/t", "#8573a1"),
     "LME_AL": ("LME aluminium", "lme_aluminium_3m_westmetall_2008-2026_staged.csv", "USD/t", "#3a7c91"),
+    "LME_ZN": ("LME zinc", "lme_zinc_3m_westmetall_2008-2026_staged.csv", "USD/t", "#71844b"),
     "LME_CU": ("LME copper", "lme_copper_3m_westmetall_2008-2026_import.csv", "USD/t", "#b47537"),
 }
 
