@@ -15,6 +15,12 @@ class Market:
 MARKETS = {
     "LME_CU": Market("LME_CU", "LME", "copper", "USD", "USD/t", 25.0,
                      "rolling three-month prompt; use a consistent closing quote"),
+    "LME_NI": Market("LME_NI", "LME", "nickel", "USD", "USD/t", 6.0,
+                     "rolling three-month prompt; use a consistent published quote"),
+    "LME_ZN": Market("LME_ZN", "LME", "zinc", "USD", "USD/t", 25.0,
+                     "rolling three-month prompt; use a consistent published quote"),
+    "LME_AL": Market("LME_AL", "LME", "aluminium", "USD", "USD/t", 25.0,
+                     "rolling three-month prompt; use a consistent published quote"),
     "COMEX_HG": Market("COMEX_HG", "COMEX", "copper", "USD", "US cents/lb", 11.33980925,
                        "monthly futures; signal_close must be roll adjusted"),
 }
@@ -39,3 +45,4 @@ class ModelConfig:
             raise ValueError("weights must sum to one")
         if self.volatility_lookback < 2 or self.volatility_target <= 0 or self.volatility_floor <= 0:
             raise ValueError("invalid volatility settings")
+

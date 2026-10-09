@@ -1,4 +1,4 @@
-"""Run a synthetic demonstration or analyse a validated single-market CSV."""
+"""Run a synthetic copper demonstration or analyse a validated metal CSV."""
 
 import argparse
 from pathlib import Path
@@ -11,7 +11,7 @@ from .synthetic import copper_pair
 
 
 def main(argv: list[str] | None = None) -> None:
-    parser = argparse.ArgumentParser(description="CTA-style copper model exposure, not observed holdings")
+    parser = argparse.ArgumentParser(description="CTA-style metal model exposure, not observed holdings")
     sub = parser.add_subparsers(dest="command", required=True)
     demo = sub.add_parser("demo", help="Reproducible synthetic copper demonstration")
     demo.add_argument("--out-dir", default="output/demo")
@@ -38,3 +38,4 @@ def main(argv: list[str] | None = None) -> None:
 
 if __name__ == "__main__":
     main()
+

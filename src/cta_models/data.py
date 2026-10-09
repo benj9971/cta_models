@@ -1,7 +1,7 @@
-"""Inputs distinguish tradable quotes from adjusted signal histories.
+"""Inputs distinguish quoted prices from signal histories.
 
 The importer does not invent a continuous futures series from a changing
-contract label. A source must supply a documented, roll-adjusted signal_close.
+contract label. A source must supply a documented continuous signal_close.
 """
 
 from pathlib import Path
@@ -11,13 +11,17 @@ import pandas as pd
 
 from .config import MARKETS
 
-REQUIRED = ("date", "market", "contract", "open", "high", "low", "close", "signal_close", "source")
+REQUIRED = ("date", "market", "contract", "close", "signal_close", "source")
+OHLC = ("open", "high", "low")
 
 
 def validate_prices(frame: pd.DataFrame, expected_market: str | None = None) -> pd.DataFrame:
     missing = set(REQUIRED) - set(frame.columns)
     if missing:
         raise ValueError(f"Missing columns: {', '.join(sorted(missing))}")
+    present_ohlc = set(OHLC) & set(frame.columns)
+    if present_ohlc and present_ohlc != set(OHLC):
+        raise ValueError("Supply all of open, high and low, or none of them")
     data = frame.copy()
     data["date"] = pd.to_datetime(data["date"], errors="raise").dt.normalize()
     if data["date"].isna().any() or data["date"].duplicated().any():
@@ -29,12 +33,12 @@ def validate_prices(frame: pd.DataFrame, expected_market: str | None = None) -> 
     for column in ("contract", "source"):
         if data[column].isna().any() or (data[column].astype(str).str.strip() == "").any():
             raise ValueError(f"{column} must be populated")
-    for column in ("open", "high", "low", "close", "signal_close"):
+    for column in (*(OHLC if present_ohlc else ()), "close", "signal_close"):
         data[column] = pd.to_numeric(data[column], errors="raise")
         if not np.isfinite(data[column]).all() or (data[column] <= 0).any():
             raise ValueError(f"{column} must contain finite positive prices")
-    if ((data["high"] < data[["open", "close", "low"]].max(axis=1)) |
-            (data["low"] > data[["open", "close", "high"]].min(axis=1))).any():
+    if present_ohlc and ((data["high"] < data[["open", "close", "low"]].max(axis=1)) |
+                         (data["low"] > data[["open", "close", "high"]].min(axis=1))).any():
         raise ValueError("OHLC ranges are inconsistent")
     if "available_at" in data:
         timestamps = pd.to_datetime(data["available_at"], utc=True, errors="raise")
@@ -46,3 +50,4 @@ def validate_prices(frame: pd.DataFrame, expected_market: str | None = None) -> 
 
 def load_csv(path: str | Path, expected_market: str | None = None) -> pd.DataFrame:
     return validate_prices(pd.read_csv(path), expected_market)
+
