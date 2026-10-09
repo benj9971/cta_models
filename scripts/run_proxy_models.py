@@ -16,6 +16,7 @@ import pandas as pd
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
 from cta_models.data import load_csv
+from cta_models.charting import weekly_last_session
 from cta_models.indicators import rsi
 from cta_models.model import compute_positions
 
@@ -28,11 +29,15 @@ METALS = {
 }
 
 
-def plot(market, prices, positions, path, years=None):
+def plot(market, prices, positions, path, years=None, frequency="Daily"):
+    if frequency not in {"Daily", "Weekly"}:
+        raise ValueError("Chart frequency must be Daily or Weekly")
     title, unit, color = METALS[market]
     valid = positions.dropna(subset=["exposure"])
     if years:
         valid = valid[valid["date"] >= valid["date"].iloc[-1] - pd.DateOffset(years=years)]
+    if frequency == "Weekly":
+        valid = weekly_last_session(valid)
     aligned = prices.set_index("date").loc[valid["date"]]
     exposure = valid["exposure"].to_numpy() * 100
     fig, (top, bottom) = plt.subplots(2, 1, figsize=(12.8, 7.2), sharex=True,
@@ -52,7 +57,7 @@ def plot(market, prices, positions, path, years=None):
     bottom.set_ylabel("Model exposure · −100 to +100")
     bottom.xaxis.set_major_locator(mdates.YearLocator(1 if years else 3))
     bottom.xaxis.set_major_formatter(mdates.DateFormatter("%Y"))
-    fig.suptitle(f"{title} · CTA-style position proxy · {'Last 3 years' if years else 'Full model history'}",
+    fig.suptitle(f"{title} · CTA-style position proxy · {'Last 3 years' if years else 'Full model history'} · {frequency.lower()} display",
                  x=.07, y=.985, ha="left", fontsize=17, fontweight="bold")
     fig.text(.07, .925, f"{valid['date'].iloc[0].date()} to {valid['date'].iloc[-1].date()}   ·   "
              f"Latest position {exposure[-1]:+.1f}   ·   Quote {aligned['close'].iloc[-1]:,.2f} {unit}", fontsize=10)
@@ -70,6 +75,8 @@ def main():
     parser.add_argument("--data-dir", type=Path, default=Path("dashboard/data"))
     parser.add_argument("--output-dir", type=Path, required=True)
     parser.add_argument("--markets", nargs="+", choices=METALS, default=list(METALS))
+    parser.add_argument("--full-frequency", choices=["Weekly", "Daily"], default="Weekly",
+                        help="Chart display only; daily model calculations and CSVs are unchanged")
     args = parser.parse_args()
     args.output_dir.mkdir(parents=True, exist_ok=True)
     for market in args.markets:
@@ -84,7 +91,8 @@ def main():
               "components", {h: round(latest[f"signal_{h}"]*100, 2) for h in (20, 60, 120, 252)},
               flush=True)
         for suffix, years in (("full", None), ("3y", 3)):
-            plot(market, prices, positions, args.output_dir / f"{market.lower()}_proxy_{suffix}.png", years)
+            plot(market, prices, positions, args.output_dir / f"{market.lower()}_proxy_{suffix}.png", years,
+                 args.full_frequency if years is None else "Daily")
 
 
 if __name__ == "__main__":
