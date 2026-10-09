@@ -11,6 +11,7 @@ import pandas as pd
 import streamlit as st
 
 from cta_models.config import MARKETS
+from cta_models.indicators import rsi
 from cta_models.scenarios import scenario_table, trigger_levels
 from dashboard.analytics import backtest, build_run, component_table, diagnostics
 
@@ -72,13 +73,15 @@ run = st.session_state["run"]
 snapshot = run.snapshot
 latest = run.positions.iloc[-1]
 unit = MARKETS[snapshot.market].price_unit
+proxy_source = (st.session_state.get("run_origin") == "proxy" or
+                run.prices["source"].astype(str).str.contains("UNVERIFIED_CONTINUOUS_SIGNAL_PROXY", case=False, regex=False).any())
 if run.synthetic:
     st.warning("SYNTHETIC DEMO — invented prices and performance. No historical or current market inference.")
 elif st.session_state.get("run_origin") == "historical":
     st.info("WESTMETALL LME 3-MONTH HISTORY — one published daily quote, USD/t. The CSV's close field is an import alias, not a closing bar. No live feed or executable P&L is implied.")
     if snapshot.market == "LME_NI":
         st.warning("NICKEL DATA NOTE — this source has no three-month quote from 8–25 March 2022. Its March 7 squeeze quote and next quote on March 28 are separated by a 21-day gap; LME trading resumed on March 16. Model signals span observed quote sessions, and proxy backtest returns across this interval are not executable.")
-elif st.session_state.get("run_origin") == "proxy":
+elif proxy_source:
     st.warning("SIGNAL-ONLY PRICE PROXY — Yahoo continuous futures quotes. Contract months, roll timing and adjustment are unverified. Iron ore uses CME TIO, not an SGX FEF settlement. These are model estimates, not observed CTA holdings or executable P&L.")
 else:
     st.info("UPLOADED DATA — source and roll methodology are user supplied. No live feed is connected.")
@@ -106,6 +109,9 @@ if page == "Positioning":
     st.line_chart(chart[["exposure", "raw_ensemble"]].mul(100).rename(columns={"exposure": "Risk-scaled position", "raw_ensemble": "Unscaled ensemble"}))
     st.subheader(f"Raw quote history ({unit})")
     st.line_chart(chart[["close"]])
+    st.subheader("RSI(14) · daily quote")
+    st.line_chart(pd.DataFrame({"RSI(14)": rsi(run.prices["close"]).to_numpy(),
+                                "30": 30, "70": 70}, index=chart.index))
     with st.expander("Individual signal history"):
         st.line_chart(chart[[f"signal_{h}" for h in snapshot.config.horizons]].mul(100))
     st.download_button("Download position history", run.positions.to_csv(index=False).encode(),
@@ -169,7 +175,7 @@ elif page == "Price scenarios":
             st.error(str(error))
 
 elif page == "Backtests":
-    if st.session_state.get("run_origin") == "proxy":
+    if proxy_source:
         st.warning("Backtests are unavailable for these bundled Yahoo continuous price proxies. Supply a verified, timestamped and roll-aware return series to evaluate futures performance.")
         st.stop()
     st.subheader("Research backtest")
@@ -223,6 +229,6 @@ else:
              "volatility_lookback": snapshot.config.volatility_lookback,
              "volatility_target": snapshot.config.volatility_target,
              "volatility_floor": snapshot.config.volatility_floor})
-    st.caption("The model uses 75% weight on 120/252-session rules. Scenario calculations preserve today's risk scale. Contract and tonnage calibration and positioning benchmark comparisons are not yet available.")
+    st.caption("The model uses 75% weight on 120/252-session rules. Scenario calculations preserve today's risk scale. The Reported comparison view is descriptive; contract and tonnage calibration remains unavailable.")
     st.download_button("Download loaded inputs", run.prices.to_csv(index=False).encode(),
                        f"{snapshot.market.lower()}_inputs.csv", "text/csv", on_click="ignore")

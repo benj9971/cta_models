@@ -145,6 +145,33 @@ class DashboardUITests(unittest.TestCase):
         self.assertEqual(len(app.session_state["run"].prices), 4615)
         self.assertTrue(app.warning)
 
+    def test_reported_comparison_for_four_metals_and_rsi(self):
+        app = self.app()
+        self.assertTrue(any(s.value == "RSI(14) · daily quote" for s in app.subheader))
+        next(r for r in app.radio if "Reported comparison" in r.options).set_value("Reported comparison").run()
+        self.assertFalse(app.exception)
+        self.assertFalse(app.error)
+        self.assertTrue(any(s.value == "Conditional price levels" for s in app.subheader))
+        self.assertEqual(len(app.dataframe), 2)
+        for market in ("NYMEX_PL", "LME_NI", "LME_AL", "LME_CU"):
+            next(s for s in app.selectbox if s.label == "Comparison market").set_value(market).run()
+            self.assertFalse(app.exception)
+            self.assertFalse(app.error)
+        next(r for r in app.radio if "Last 3 years" in r.options).set_value("Full history").run()
+        self.assertFalse(app.exception)
+
+    def test_bundled_continuous_proxy_blocks_backtest(self):
+        app = self.app()
+        app.selectbox[0].select("NYMEX_PL")
+        next(r for r in app.radio if "NYMEX platinum Yahoo continuous proxy (2010–2026)" in r.options).set_value(
+            "NYMEX platinum Yahoo continuous proxy (2010–2026)")
+        app.button[0].click().run()
+        self.assertFalse(app.exception)
+        self.assertEqual(app.session_state["run"].snapshot.market, "NYMEX_PL")
+        next(r for r in app.radio if "Backtests" in r.options).set_value("Backtests").run()
+        self.assertFalse(app.exception)
+        self.assertTrue(any("Backtests are unavailable" in w.value for w in app.warning))
+
 
 if __name__ == "__main__":
     unittest.main()

@@ -24,6 +24,23 @@ outputs stay under `output/`, which is ignored by Git.
 
 Run focused checks with `python -m unittest discover -s tests -v`.
 
+For the bundled dashboard and positioning charts on a laptop, install the
+optional dependencies and launch from the repository root:
+
+```bash
+python -m pip install -e ".[dashboard,data]"
+python -m streamlit run dashboard/app.py
+```
+
+Open the local URL printed by Streamlit. **Positioning** shows the loaded
+market's model, quote and RSI; **Reported comparison** has the four-market
+dual-axis model versus exchange positioning charts, price, RSI, and conditional
+price levels. Its charts use bundled inputs independently of the market selected
+in the load form. **Price scenarios** evaluates the loaded market, **Diagnostics**
+shows its input checks, and **Backtests** provides research-only tests where
+permitted by the loaded data. There is no automatic price or positioning update
+on dashboard startup; refresh the source scripts and reload the CSVs to update.
+
 ## Model definition
 
 For each market the four horizons are 20, 60, 120 and 252 trading days, with
