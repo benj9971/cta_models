@@ -22,6 +22,8 @@ class PositioningDataTests(unittest.TestCase):
     def test_contract_metadata_and_cot_normalization(self):
         self.assertAlmostEqual(MARKETS["COMEX_HG"].contract_size_tonnes, 11.33980925)
         self.assertEqual(MARKETS["NYMEX_PL"].contract_size, 50)
+        self.assertEqual(MARKETS["COMEX_GC"].contract_size, 100)
+        self.assertEqual(MARKETS["COMEX_SI"].contract_size, 5000)
         self.assertIsNone(MARKETS["NYMEX_PL"].contract_size_tonnes)
         self.assertIsNone(MARKETS["SGX_IO62"].contract_size)
         row = {

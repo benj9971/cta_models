@@ -11,6 +11,7 @@ import pandas as pd
 import streamlit as st
 
 from cta_models.config import MARKETS
+from cta_models.charting import weekly_last_session
 from cta_models.indicators import rsi
 from cta_models.scenarios import scenario_table, trigger_levels
 from dashboard.analytics import backtest, build_run, component_table, diagnostics
@@ -22,9 +23,11 @@ HISTORICAL_FILES = {
     "LME_AL": ("LME aluminium history (2008–2026)", Path(__file__).resolve().parent / "data" / "lme_aluminium_3m_westmetall_2008-2026_staged.csv"),
     "COMEX_HG": ("COMEX copper Yahoo continuous proxy (2000–2026)", Path(__file__).resolve().parent / "data" / "comex_hg_yahoo_research_proxy.csv"),
     "NYMEX_PL": ("NYMEX platinum Yahoo continuous proxy (2010–2026)", Path(__file__).resolve().parent / "data" / "nymex_pl_yahoo_research_proxy.csv"),
+    "COMEX_GC": ("COMEX gold Yahoo continuous proxy (2000–2026)", Path(__file__).resolve().parent / "data" / "comex_gc_yahoo_research_proxy.csv"),
+    "COMEX_SI": ("COMEX silver Yahoo continuous proxy (2000–2026)", Path(__file__).resolve().parent / "data" / "comex_si_yahoo_research_proxy.csv"),
     "SGX_IO62": ("Iron ore CME TIO proxy for SGX (2010–2026)", Path(__file__).resolve().parent / "data" / "sgx_io62_yahoo_research_proxy.csv"),
 }
-PROXY_MARKETS = {"COMEX_HG", "NYMEX_PL", "SGX_IO62"}
+PROXY_MARKETS = {"COMEX_HG", "NYMEX_PL", "COMEX_GC", "COMEX_SI", "SGX_IO62"}
 HISTORICAL_LABELS = {label: (market, path) for market, (label, path) in HISTORICAL_FILES.items()}
 
 st.set_page_config(page_title="Metals CTA", page_icon="📈", layout="centered")
@@ -104,13 +107,19 @@ if page == "Positioning":
                + ("not enough history" if pd.isna(latest['exposure_percentile']) else f"{latest['exposure_percentile']:.0f}th"))
     st.subheader("Signals by horizon")
     st.dataframe(component_table(run).round(2), hide_index=True, width="stretch")
-    chart = run.positions.set_index("date")
+    frequency = st.radio("Chart frequency", ["Weekly", "Daily"], horizontal=True)
+    st.caption("Weekly shows the last observed session in each week, including the latest. RSI and model signals are still calculated daily; downloads retain every session.")
+    chart = run.positions if frequency == "Daily" else weekly_last_session(run.positions)
+    chart = chart.set_index("date")
     st.subheader("Position history (points)")
     st.line_chart(chart[["exposure", "raw_ensemble"]].mul(100).rename(columns={"exposure": "Risk-scaled position", "raw_ensemble": "Unscaled ensemble"}))
     st.subheader(f"Raw quote history ({unit})")
     st.line_chart(chart[["close"]])
-    st.subheader("RSI(14) · daily quote")
-    st.line_chart(pd.DataFrame({"RSI(14)": rsi(run.prices["close"]).to_numpy(),
+    st.subheader("RSI(14) · daily calculation")
+    daily_rsi = pd.DataFrame({"date": run.prices["date"], "RSI(14)": rsi(run.prices["close"]).to_numpy()})
+    if frequency == "Weekly":
+        daily_rsi = weekly_last_session(daily_rsi)
+    st.line_chart(pd.DataFrame({"RSI(14)": daily_rsi["RSI(14)"].to_numpy(),
                                 "30": 30, "70": 70}, index=chart.index))
     with st.expander("Individual signal history"):
         st.line_chart(chart[[f"signal_{h}" for h in snapshot.config.horizons]].mul(100))
@@ -125,10 +134,13 @@ elif page == "Reported comparison":
         comparison_market = st.selectbox("Comparison market", list(COMPARISON_MARKETS),
                                          index=list(COMPARISON_MARKETS).index(snapshot.market) if snapshot.market in COMPARISON_MARKETS else 0)
         window = st.radio("Window", ["Last 3 years", "Full history"], horizontal=True)
+        frequency = (st.radio("Chart frequency", ["Weekly", "Daily"], horizontal=True)
+                     if window == "Full history" else "Daily")
+        st.caption(f"{frequency} chart display. Model signals and RSI are calculated from daily closes; published fund positions remain weekly.")
         comp_prices, comp_daily, comp_weekly = build_comparison(comparison_market, COMPARISON_DATA)
         figure = BytesIO()
         comparison_chart(comparison_market, comp_daily, comp_weekly, figure,
-                         3 if window == "Last 3 years" else None)
+                         3 if window == "Last 3 years" else None, frequency)
         st.image(figure.getvalue(), width="stretch")
         matched = comp_weekly.dropna(subset=["model_score", "reported_net_pct_oi"])
         st.caption(f"{len(matched)} matched report dates · same-date correlation "

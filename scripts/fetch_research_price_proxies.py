@@ -1,6 +1,6 @@
 """Fetch Yahoo continuous futures closes for *signal-only* research.
 
-HG=F and PL=F represent vendor continuous COMEX/NYMEX futures. TIO=F is a
+HG=F, GC=F, SI=F and PL=F represent vendor continuous COMEX/NYMEX futures. TIO=F is a
 CME iron-ore future used only as a proxy for SGX iron ore; it is NOT SGX FEF.
 Contract transitions and adjustment methodology are not verified. Never infer
 executable P&L from these CSVs. Yahoo availability and usage terms may change.
@@ -17,6 +17,8 @@ from urllib.request import Request, urlopen
 MARKETS = {
     "COMEX_HG": ("HG=F", "USD/lb", 100.0),
     "NYMEX_PL": ("PL=F", "USD/troy oz", 1.0),
+    "COMEX_GC": ("GC=F", "USD/troy oz", 1.0),
+    "COMEX_SI": ("SI=F", "USD/troy oz", 1.0),
     "SGX_IO62": ("TIO=F", "USD/dmt", 1.0),
 }
 
@@ -62,9 +64,11 @@ def main():
     parser.add_argument("--output-dir", type=Path, required=True)
     parser.add_argument("--as-of", type=date.fromisoformat, required=True,
                         help="Include completed sessions through this YYYY-MM-DD date")
+    parser.add_argument("--markets", nargs="+", choices=MARKETS, default=list(MARKETS),
+                        help="Select markets to fetch; defaults to all configured proxies")
     args = parser.parse_args()
     args.output_dir.mkdir(parents=True, exist_ok=True)
-    for market in MARKETS:
+    for market in args.markets:
         rows, meta = fetch(market, args.as_of)
         path = args.output_dir / f"{market.lower()}_yahoo_research_proxy.csv"
         with path.open("w", newline="", encoding="utf-8") as fh:
