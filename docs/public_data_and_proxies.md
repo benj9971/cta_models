@@ -8,6 +8,8 @@ These CSVs retain **all five published trader categories**, each risk-reducing, 
 
 To update: `python scripts/fetch_lme_cotr.py --output-dir dashboard/data` (requires `requests`, `openpyxl`, `xlrd`). The script refuses to save a partial archive when any linked workbook fails. The LME pages currently link back to January 2020; this dataset makes no claim of complete pre-2020 history. Check LME terms before redistributing or using these reports outside permitted research.
 
+To chart the closest LME counterpart to managed money, run `python scripts/chart_lme_investment_funds.py --output-dir output/lme_funds`. Add `--refresh` to pull the public LME workbooks first, or `--market LME_CU` for just copper. The script exports a weekly joined CSV and full-history and three-year charts for each metal. It selects the published **investment funds / total** long and short positions and plots their net in lots above the observed Westmetall three-month quote on or before each position date. Its CSV retains the report publication timestamp; the Friday position was generally unknown until Tuesday. It does not equate LME investment funds to CFTC managed money or to CTA holdings. Nickel has two position weeks without a nearby quote during the 2022 trading disruption; these prices remain missing rather than being filled across the gap.
+
 ## Daily prices used for exploratory signals
 
 | Input file | Vendor ticker | Underlying proxy | Coverage through 8 Oct 2026 | Latest quote |
