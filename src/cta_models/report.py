@@ -58,13 +58,14 @@ def write_report(results: dict[str, tuple[pd.DataFrame, Snapshot]], out_dir: str
     synthetic = any(str(item["data_source"]).startswith("SYNTHETIC") for item in summaries)
     banner = ("SYNTHETIC DEMONSTRATION — invented prices; no inference about historical or current CTA positions."
               if synthetic else "MODEL ESTIMATE — not observed CTA holdings. Verify source timing and roll construction.")
-    html = ("<!doctype html><html lang='en'><meta charset='utf-8'><title>Copper CTA model</title>"
+    html = ("<!doctype html><html lang='en'><meta charset='utf-8'><title>Metals CTA model</title>"
             "<style>body{font:16px system-ui;max-width:900px;margin:2rem auto;padding:0 1rem;color:#17212b}"
             "header{background:#fff1ca;padding:1rem}table{border-collapse:collapse;width:100%}"
             "th,td{text-align:right;padding:.5rem;border-bottom:1px solid #ddd}svg{width:100%;background:#f7f9fb}</style>"
-            f"<header><h1>Copper CTA positioning proxy</h1><strong>{escape(banner)}</strong>"
+            f"<header><h1>Metals CTA positioning proxy</h1><strong>{escape(banner)}</strong>"
             "<p>−100% to +100% means model exposure relative to its own risk limit. It is not a count of actual CTA contracts.</p></header>"
             + "".join(panels) + "</html>")
     path = dest / "report.html"
     path.write_text(html, encoding="utf-8")
     return path
+
