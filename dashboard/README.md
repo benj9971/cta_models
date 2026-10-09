@@ -30,9 +30,18 @@ Ctrl+C and stop the Codespace when finished. No hosting service is provisioned.
 
 ## Manual workflow
 
-1. Choose LME_CU or COMEX_HG and synthetic demo or CSV upload.
-2. Press **Load / refresh**. Until pressed, changes to load controls do not change
-   displayed results. The loaded market/date stays in the header.
+1. The included Westmetall LME copper history loads automatically on opening.
+   It has 4,743 quotes from 2008-01-02 to 2026-10-08, transcribed from the
+   [Westmetall copper tables](https://www.westmetall.com/en/markdaten.php?action=table&field=LME_Cu_cash&year=2026)
+   (yearly selector on that page). One repeated Saturday quote and two rows
+   without a price were excluded. The data is a research
+   input, one published 3-month quote per date, not OHLC bars or an executable
+   futures return series. The latest quote date is shown in the header.
+2. To replace it, expand **Load or refresh data**, select LME_CU or COMEX_HG,
+   choose **Upload CSV**, pick a file, then press **Load / refresh**. For the
+   synthetic demo, choose that input instead. Changing controls alone does not
+   change the displayed run. The included history can be reloaded from the
+   same input selector.
 3. Use the vertical view selector: Positioning, Price scenarios, Backtests,
    Diagnostics. Charts fit the screen; wide tables scroll horizontally.
 4. Download inputs, signals, scenarios or backtest rows as CSV. Ask for changes
