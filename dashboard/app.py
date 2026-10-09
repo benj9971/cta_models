@@ -16,6 +16,8 @@ from dashboard.analytics import backtest, build_run, component_table, diagnostic
 HISTORICAL_FILES = {
     "LME_CU": ("LME copper history (2008–2026)", Path(__file__).resolve().parent / "data" / "lme_copper_3m_westmetall_2008-2026_import.csv"),
     "LME_NI": ("LME nickel history (2008–2026)", Path(__file__).resolve().parent / "data" / "lme_nickel_3m_westmetall_2008-2026_import.csv"),
+    "LME_ZN": ("LME zinc history (2008–2026)", Path(__file__).resolve().parent / "data" / "lme_zinc_3m_westmetall_2008-2026_staged.csv"),
+    "LME_AL": ("LME aluminium history (2008–2026)", Path(__file__).resolve().parent / "data" / "lme_aluminium_3m_westmetall_2008-2026_staged.csv"),
 }
 HISTORICAL_LABELS = {label: (market, path) for market, (label, path) in HISTORICAL_FILES.items()}
 
@@ -42,8 +44,8 @@ with st.expander("Load or refresh data", expanded="run" not in st.session_state)
                 raise ValueError("Choose a CSV before loading")
             if source in HISTORICAL_LABELS and market != HISTORICAL_LABELS[source][0]:
                 raise ValueError(f"The selected history is for {HISTORICAL_LABELS[source][0]}; select that market")
-            if source == "Synthetic demo" and market == "LME_NI":
-                raise ValueError("The synthetic demo is for copper only; choose nickel history or upload a nickel CSV")
+            if source == "Synthetic demo" and market != "LME_CU":
+                raise ValueError("The synthetic demo is for LME copper only; choose matching history or upload a CSV")
             payload = (HISTORICAL_LABELS[source][1].read_bytes() if source in HISTORICAL_LABELS else
                        None if source == "Synthetic demo" else upload.getvalue())
             new_run = build_run(market, payload)
