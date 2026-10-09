@@ -6,6 +6,7 @@ import numpy as np
 import pandas as pd
 
 from dashboard.analytics import backtest, build_run, component_table
+from cta_models.config import MARKETS
 
 
 class DashboardAnalyticsTests(unittest.TestCase):
@@ -61,6 +62,18 @@ class DashboardAnalyticsTests(unittest.TestCase):
         other = build_run("LME_CU", changed.to_csv(index=False).encode())
         after, _ = backtest(other, return_basis="provided")
         pd.testing.assert_frame_equal(original.drop(columns="exposure"), after.drop(columns="exposure"))
+
+    def test_included_nickel_history_survives_market_disruption_gap(self):
+        path = Path(__file__).resolve().parents[1] / "dashboard" / "data" / "lme_nickel_3m_westmetall_2008-2026_import.csv"
+        run = build_run("LME_NI", path.read_bytes())
+        self.assertEqual(MARKETS["LME_NI"].contract_size_tonnes, 6.0)
+        self.assertEqual(len(run.prices), 4615)
+        self.assertEqual(run.prices["date"].iloc[0], pd.Timestamp("2008-06-17"))
+        self.assertEqual(run.prices["date"].iloc[-1], pd.Timestamp("2026-10-08"))
+        self.assertEqual(run.positions["exposure"].notna().sum(), 4363)
+        self.assertEqual(run.prices["date"].diff().dt.days.max(), 21)
+        self.assertAlmostEqual(run.snapshot.at_price(run.snapshot.raw_price)[0],
+                               run.positions["exposure"].iloc[-1])
 
 
 @unittest.skipUnless(importlib.util.find_spec("streamlit"), "optional Streamlit dependency absent")
@@ -121,6 +134,16 @@ class DashboardUITests(unittest.TestCase):
         next(r for r in app.radio if "Positioning" in r.options).set_value("Backtests").run()
         self.assertFalse(app.exception)
         self.assertTrue(app.info)
+
+    def test_load_nickel_history(self):
+        app = self.app()
+        app.selectbox[0].select("LME_NI")
+        next(r for r in app.radio if "LME nickel history (2008–2026)" in r.options).set_value("LME nickel history (2008–2026)")
+        app.button[0].click().run()
+        self.assertFalse(app.exception)
+        self.assertEqual(app.session_state["run"].snapshot.market, "LME_NI")
+        self.assertEqual(len(app.session_state["run"].prices), 4615)
+        self.assertTrue(app.warning)
 
 
 if __name__ == "__main__":
