@@ -119,7 +119,7 @@ elif page == "Reported comparison":
         comparison_market = st.selectbox("Comparison market", list(COMPARISON_MARKETS),
                                          index=list(COMPARISON_MARKETS).index(snapshot.market) if snapshot.market in COMPARISON_MARKETS else 0)
         window = st.radio("Window", ["Last 3 years", "Full history"], horizontal=True)
-        _, comp_daily, comp_weekly = build_comparison(comparison_market, COMPARISON_DATA)
+        comp_prices, comp_daily, comp_weekly = build_comparison(comparison_market, COMPARISON_DATA)
         figure = BytesIO()
         comparison_chart(comparison_market, comp_daily, comp_weekly, figure,
                          3 if window == "Last 3 years" else None)
@@ -128,6 +128,16 @@ elif page == "Reported comparison":
         st.caption(f"{len(matched)} matched report dates · same-date correlation "
                    f"{matched['model_score'].corr(matched['reported_net_pct_oi']):.2f}. "
                    "This is a descriptive comparison, not a predictive test.")
+        from cta_models.model import make_snapshot
+        comp_snapshot = make_snapshot(comp_prices, comp_daily.rename(columns={"price_date": "date"}))
+        st.subheader("Conditional price levels")
+        st.caption("One-quote shocks with today's volatility and earlier prices held fixed. Rebalance markers, not trade stops or forecasts.")
+        shocks = scenario_table(comp_snapshot)
+        st.dataframe(shocks[["price_change_pct", "scenario_price", "exposure_pct", "change_pp"]].round(2),
+                     hide_index=True, width="stretch")
+        levels = trigger_levels(comp_snapshot)
+        st.dataframe(pd.DataFrame([{"Model threshold": label, "Quote": value} for label, value in levels.items()]).round(2),
+                     hide_index=True, width="stretch")
         st.download_button("Download weekly comparison", comp_weekly.to_csv(index=False).encode(),
                            f"{comparison_market.lower()}_model_vs_reported.csv", "text/csv", on_click="ignore")
     except (ImportError, OSError, ValueError, KeyError, TypeError, IndexError) as error:
