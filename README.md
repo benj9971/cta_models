@@ -33,7 +33,7 @@ python -m streamlit run dashboard/app.py
 ```
 
 Open the local URL printed by Streamlit. **Positioning** shows the loaded
-market's model, quote and RSI; **Reported comparison** has the six-market
+market's model, quote and RSI; **Reported comparison** has the seven-market
 dual-axis model versus exchange positioning charts, price, RSI, and conditional
 price levels. Its charts use bundled inputs independently of the market selected
 in the load form. **Price scenarios** evaluates the loaded market, **Diagnostics**
@@ -102,7 +102,7 @@ The included Yahoo continuous futures quotes are signal-only proxies and their
 backtests are disabled. The LME three-month price imports are published quotes,
 not an executable contract-level return series.
 
-Compare platinum, gold, silver, nickel, aluminium and LME copper model scores against the
+Compare platinum, gold, silver, nickel, zinc, aluminium and LME copper model scores against the
 reported fund categories, with price and RSI panels, using
 `python scripts/compare_reported_positions.py --output-dir output/position_comparison`.
 See `docs/model_vs_reported.md` for position-date alignment, publication lags,
