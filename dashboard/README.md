@@ -1,4 +1,4 @@
-# Optional copper CTA dashboard
+# Optional metals CTA dashboard
 
 This additive package imports the existing modelling engine. Its importer now
 accepts complete close-only series as well as full OHLC bars. Install Streamlit only
@@ -37,14 +37,18 @@ Ctrl+C and stop the Codespace when finished. No hosting service is provisioned.
    without a price were excluded. The data is a research
    input, one published 3-month quote per date, not OHLC bars or an executable
    futures return series. The latest quote date is shown in the header.
-2. To replace it, expand **Load or refresh data**, select LME_CU or COMEX_HG,
+2. To inspect nickel, select **LME_NI** and **LME nickel history (2008–2026)**,
+   then press **Load / refresh**. Nickel has 4,615 quotes from 2008-06-17 to
+   2026-10-08. A warning flags its March 2022 quote interruption. Synthetic
+   demo data is available for copper only.
+3. To replace the included data, expand **Load or refresh data**, select LME_CU, LME_NI or COMEX_HG,
    choose **Upload CSV**, pick a file, then press **Load / refresh**. For the
    synthetic demo, choose that input instead. Changing controls alone does not
    change the displayed run. The included history can be reloaded from the
    same input selector.
-3. Use the vertical view selector: Positioning, Price scenarios, Backtests,
+4. Use the vertical view selector: Positioning, Price scenarios, Backtests,
    Diagnostics. Charts fit the screen; wide tables scroll horizontally.
-4. Download inputs, signals, scenarios or backtest rows as CSV. Ask for changes
+5. Download inputs, signals, scenarios or backtest rows as CSV. Ask for changes
    with the loaded market, quote date and the downloaded evidence.
 
 Uploads and results stay in browser-session server memory. There is no global
@@ -80,6 +84,8 @@ Optional columns:
 
 The architecture reads market definitions from the engine, so later metals can
 reuse the views when their inputs and demo/provider support are added.
+The nickel contract is 6 tonnes per LME lot; this is reference metadata and
+the dashboard does not convert model exposure into lots or tonnes.
 
 ## Backtest definition and limits
 
