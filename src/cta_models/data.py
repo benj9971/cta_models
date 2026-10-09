@@ -33,7 +33,7 @@ def validate_prices(frame: pd.DataFrame, expected_market: str | None = None) -> 
     for column in ("contract", "source"):
         if data[column].isna().any() or (data[column].astype(str).str.strip() == "").any():
             raise ValueError(f"{column} must be populated")
-    for column in (*present_ohlc, "close", "signal_close"):
+    for column in (*(OHLC if present_ohlc else ()), "close", "signal_close"):
         data[column] = pd.to_numeric(data[column], errors="raise")
         if not np.isfinite(data[column]).all() or (data[column] <= 0).any():
             raise ValueError(f"{column} must contain finite positive prices")
