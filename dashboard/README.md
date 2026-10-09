@@ -1,7 +1,7 @@
 # Optional copper CTA dashboard
 
-This additive package imports the existing modelling engine. No existing model,
-CLI, report, dependency file or configuration is changed. Install Streamlit only
+This additive package imports the existing modelling engine. Its importer now
+accepts complete close-only series as well as full OHLC bars. Install Streamlit only
 when using the dashboard. No live data fetch, scheduler or public deployment is
 included. The engine remains usable without dashboard dependencies.
 
@@ -46,13 +46,18 @@ No timestamp or demo number is presented as a live market reading.
 
 ## Input contract
 
-Use the existing engine schema:
-`date,market,contract,open,high,low,close,signal_close,source`.
+Use the engine schema:
+`date,market,contract,close,signal_close,source`. Supply `open,high,low`
+only as a complete group when genuine OHLC bars are available; a published
+single daily quote must not be copied into those columns.
 Supply one market per file and more than 252 observations for a complete
 position; at least 255 are needed for two backtest observations. Existing input
 validation remains authoritative. Quote units are USD/t for LME and US cents/lb
-for COMEX. `signal_close` must be a documented roll-adjusted series in the same
-units as the raw quote. The app does not stitch futures contracts.
+for COMEX. `signal_close` must be a documented continuous series in the same
+units as the raw quote. The public LME rolling three-month quote can use the
+same price in both fields for a research signal test; its `close` field is only
+a schema alias, not an exchange closing price. The app does not stitch futures
+contracts.
 
 Optional columns:
 
