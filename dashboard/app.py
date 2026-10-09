@@ -22,9 +22,11 @@ HISTORICAL_FILES = {
     "LME_AL": ("LME aluminium history (2008–2026)", Path(__file__).resolve().parent / "data" / "lme_aluminium_3m_westmetall_2008-2026_staged.csv"),
     "COMEX_HG": ("COMEX copper Yahoo continuous proxy (2000–2026)", Path(__file__).resolve().parent / "data" / "comex_hg_yahoo_research_proxy.csv"),
     "NYMEX_PL": ("NYMEX platinum Yahoo continuous proxy (2010–2026)", Path(__file__).resolve().parent / "data" / "nymex_pl_yahoo_research_proxy.csv"),
+    "COMEX_GC": ("COMEX gold Yahoo continuous proxy (2000–2026)", Path(__file__).resolve().parent / "data" / "comex_gc_yahoo_research_proxy.csv"),
+    "COMEX_SI": ("COMEX silver Yahoo continuous proxy (2000–2026)", Path(__file__).resolve().parent / "data" / "comex_si_yahoo_research_proxy.csv"),
     "SGX_IO62": ("Iron ore CME TIO proxy for SGX (2010–2026)", Path(__file__).resolve().parent / "data" / "sgx_io62_yahoo_research_proxy.csv"),
 }
-PROXY_MARKETS = {"COMEX_HG", "NYMEX_PL", "SGX_IO62"}
+PROXY_MARKETS = {"COMEX_HG", "NYMEX_PL", "COMEX_GC", "COMEX_SI", "SGX_IO62"}
 HISTORICAL_LABELS = {label: (market, path) for market, (label, path) in HISTORICAL_FILES.items()}
 
 st.set_page_config(page_title="Metals CTA", page_icon="📈", layout="centered")
