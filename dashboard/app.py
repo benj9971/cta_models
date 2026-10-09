@@ -1,6 +1,7 @@
 """Launch from the repo root: python -m streamlit run dashboard/app.py."""
 
 from pathlib import Path
+from io import BytesIO
 import sys
 
 # Streamlit executes this as a file. Make the additive package importable.
@@ -87,7 +88,7 @@ if not run.synthetic:
         st.warning(f"Last observation is {snapshot.as_of.date()} (calendar age: {age} days). Check freshness and dates.")
 st.caption(f"Loaded: {snapshot.market} · quote date {snapshot.as_of.date()} · refreshed {run.loaded_at:%Y-%m-%d %H:%M UTC}")
 st.caption("−100 to +100 measures exposure against the model's risk limit; it is not observed CTA holdings or contracts.")
-page = st.radio("View", ["Positioning", "Price scenarios", "Backtests", "Diagnostics"], label_visibility="collapsed")
+page = st.radio("View", ["Positioning", "Reported comparison", "Price scenarios", "Backtests", "Diagnostics"], label_visibility="collapsed")
 
 if page == "Positioning":
     valid = run.positions.dropna(subset=["exposure"])
@@ -109,6 +110,28 @@ if page == "Positioning":
         st.line_chart(chart[[f"signal_{h}" for h in snapshot.config.horizons]].mul(100))
     st.download_button("Download position history", run.positions.to_csv(index=False).encode(),
                        f"{snapshot.market.lower()}_positions.csv", "text/csv", width="stretch", on_click="ignore")
+
+elif page == "Reported comparison":
+    st.subheader("Model vs published fund positions")
+    st.caption("Bundled research histories. Weekly reported positions are drawn at their position dates, but became public later. LME investment funds are not the same classification as CFTC managed money or observed CTA holdings.")
+    try:
+        from scripts.compare_reported_positions import build as build_comparison, chart as comparison_chart, MARKETS as COMPARISON_MARKETS, DATA as COMPARISON_DATA
+        comparison_market = st.selectbox("Comparison market", list(COMPARISON_MARKETS),
+                                         index=list(COMPARISON_MARKETS).index(snapshot.market) if snapshot.market in COMPARISON_MARKETS else 0)
+        window = st.radio("Window", ["Last 3 years", "Full history"], horizontal=True)
+        _, comp_daily, comp_weekly = build_comparison(comparison_market, COMPARISON_DATA)
+        figure = BytesIO()
+        comparison_chart(comparison_market, comp_daily, comp_weekly, figure,
+                         3 if window == "Last 3 years" else None)
+        st.image(figure.getvalue(), width="stretch")
+        matched = comp_weekly.dropna(subset=["model_score", "reported_net_pct_oi"])
+        st.caption(f"{len(matched)} matched report dates · same-date correlation "
+                   f"{matched['model_score'].corr(matched['reported_net_pct_oi']):.2f}. "
+                   "This is a descriptive comparison, not a predictive test.")
+        st.download_button("Download weekly comparison", comp_weekly.to_csv(index=False).encode(),
+                           f"{comparison_market.lower()}_model_vs_reported.csv", "text/csv", on_click="ignore")
+    except (ImportError, OSError, ValueError, KeyError, TypeError, IndexError) as error:
+        st.error(f"Could not produce comparison chart: {error}. Install Matplotlib and check the bundled data.")
 
 elif page == "Price scenarios":
     st.subheader("Conditional price scenarios")
