@@ -16,7 +16,9 @@ from urllib.parse import urlencode
 from urllib.request import urlopen
 
 API = "https://publicreporting.cftc.gov/resource/72hh-3qpy.json"
-MARKETS = {"085692": "COMEX_HG", "076651": "NYMEX_PL"}
+MARKETS = {"085692": "COMEX_HG", "076651": "NYMEX_PL",
+           "088691": "COMEX_GC", "084691": "COMEX_SI"}
+DEFAULT_MARKETS = ("COMEX_HG", "NYMEX_PL")
 FIELDS = (
     "report_date_as_yyyy_mm_dd", "cftc_contract_market_code",
     "market_and_exchange_names", "open_interest_all",
@@ -60,13 +62,14 @@ def normalize(records: list[dict], retrieved_at: str) -> list[dict]:
     return sorted(result, key=lambda r: (r["report_date"], r["market"]))
 
 
-def fetch(timeout: int = 30, page_size: int = 1000) -> list[dict]:
+def fetch(codes: tuple[str, ...] = ("085692", "076651"),
+          timeout: int = 30, page_size: int = 1000) -> list[dict]:
     records = []
     offset = 0
     while True:
         query = {
             "$select": ",".join(FIELDS),
-            "$where": "cftc_contract_market_code in('085692','076651')",
+            "$where": "cftc_contract_market_code in(" + ",".join(f"'{code}'" for code in codes) + ")",
             "$order": "report_date_as_yyyy_mm_dd,cftc_contract_market_code",
             "$limit": page_size, "$offset": offset,
         }
@@ -84,17 +87,20 @@ def fetch(timeout: int = 30, page_size: int = 1000) -> list[dict]:
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--output", type=Path, required=True)
+    parser.add_argument("--markets", nargs="+", choices=list(MARKETS.values()),
+                        default=list(DEFAULT_MARKETS))
     args = parser.parse_args()
+    codes = tuple(code for code, name in MARKETS.items() if name in args.markets)
     fetched = datetime.now(timezone.utc).isoformat(timespec="seconds")
-    records = normalize(fetch(), fetched)
-    if not records or {r["market"] for r in records} != set(MARKETS.values()):
-        raise ValueError("CFTC result missing one or both expected markets")
+    records = normalize(fetch(codes), fetched)
+    if not records or {r["market"] for r in records} != set(args.markets):
+        raise ValueError("CFTC result missing one or more expected markets")
     args.output.parent.mkdir(parents=True, exist_ok=True)
     with args.output.open("w", newline="", encoding="utf-8") as output:
         writer = csv.DictWriter(output, fieldnames=OUTPUT_FIELDS)
         writer.writeheader()
         writer.writerows(records)
-    for market in MARKETS.values():
+    for market in args.markets:
         subset = [r for r in records if r["market"] == market]
         print(f"{market}: {len(subset)} weeks, {subset[0]['report_date']} to {subset[-1]['report_date']}; "
               f"latest managed-money net {subset[-1]['managed_money_net']:,} contracts")
