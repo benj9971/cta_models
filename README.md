@@ -81,6 +81,12 @@ The included Yahoo continuous futures quotes are signal-only proxies and their
 backtests are disabled. The LME three-month price imports are published quotes,
 not an executable contract-level return series.
 
+Compare platinum, nickel, aluminium and LME copper model scores against the
+reported fund categories, with price and RSI panels, using
+`python scripts/compare_reported_positions.py --output-dir output/position_comparison`.
+See `docs/model_vs_reported.md` for position-date alignment, publication lags,
+scenario levels and the limits of interpreting a model threshold as a stop.
+
 Before interpreting futures P&L or estimated CTA contracts we still need
 verified contract settlements, roll and expiration rules, available-at
 timestamps, cost and slippage assumptions, contract sizing and market-specific
