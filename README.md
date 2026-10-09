@@ -1,7 +1,7 @@
-# Copper CTA positioning proxy
+# Metals CTA positioning proxy
 
 An open, auditable **model estimate** of what a group of trend-following rules
-would hold in LME and COMEX copper. It is intended as context for discretionary
+would hold across copper, precious metals and other covered markets. It is intended as context for discretionary
 trading. It does **not** observe CTA holdings or forecast actual CTA order flow.
 
 The `demo` command uses **invented prices**. No date or number in its demo
@@ -33,7 +33,7 @@ python -m streamlit run dashboard/app.py
 ```
 
 Open the local URL printed by Streamlit. **Positioning** shows the loaded
-market's model, quote and RSI; **Reported comparison** has the four-market
+market's model, quote and RSI; **Reported comparison** has the six-market
 dual-axis model versus exchange positioning charts, price, RSI, and conditional
 price levels. Its charts use bundled inputs independently of the market selected
 in the load form. **Price scenarios** evaluates the loaded market, **Diagnostics**
@@ -81,8 +81,8 @@ unit**. There is intentionally no implicit stitch based on contract labels:
 that would turn a futures roll gap into a false trading signal. The initial
 version requires the adjusted series from a vetted data preparation step.
 
-`LME_CU` is USD/t on the rolling three-month prompt; `COMEX_HG` is US cents/lb
-on a monthly contract. Market specifications live in `config.py` so further
+`LME_CU` is USD/t on the rolling three-month prompt; `COMEX_HG` is US cents/lb;
+`COMEX_GC` and `COMEX_SI` are USD/troy oz on monthly futures. Market specifications live in `config.py` so further
 metals and exchanges can be added without changing the signal code. The
 synthetic COMEX contract names and LME prompt dates are illustrative labels,
 not exchange calendars or executable roll schedules.
@@ -98,7 +98,7 @@ The included Yahoo continuous futures quotes are signal-only proxies and their
 backtests are disabled. The LME three-month price imports are published quotes,
 not an executable contract-level return series.
 
-Compare platinum, nickel, aluminium and LME copper model scores against the
+Compare platinum, gold, silver, nickel, aluminium and LME copper model scores against the
 reported fund categories, with price and RSI panels, using
 `python scripts/compare_reported_positions.py --output-dir output/position_comparison`.
 See `docs/model_vs_reported.md` for position-date alignment, publication lags,
