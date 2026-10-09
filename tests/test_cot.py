@@ -1,10 +1,24 @@
 import unittest
 
+import pandas as pd
+
 from cta_models.config import MARKETS
 from cta_models.cot import normalize
+from cta_models.indicators import rsi
 
 
 class PositioningDataTests(unittest.TestCase):
+    def test_rsi_uses_close_sequence_without_lookahead(self):
+        rising = pd.Series(range(1, 40), dtype=float)
+        self.assertTrue(rsi(rising).iloc[:14].isna().all())
+        self.assertEqual(rsi(rising).iloc[-1], 100.0)
+        falling = pd.Series(range(40, 1, -1), dtype=float)
+        self.assertEqual(rsi(falling).iloc[-1], 0.0)
+        self.assertEqual(rsi(pd.Series([10.0] * 40)).iloc[-1], 50.0)
+        revised = rising.copy()
+        revised.iloc[-1] = 100.0
+        self.assertEqual(rsi(rising).iloc[-2], rsi(revised).iloc[-2])
+
     def test_contract_metadata_and_cot_normalization(self):
         self.assertAlmostEqual(MARKETS["COMEX_HG"].contract_size_tonnes, 11.33980925)
         self.assertEqual(MARKETS["NYMEX_PL"].contract_size, 50)
