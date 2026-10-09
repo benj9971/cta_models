@@ -1,9 +1,10 @@
 # Staged LME three-month histories
 
-These CSVs are stored for the next model integration step. `LME_ZN` and
-`LME_AL` are **not yet configured markets** in `src/cta_models/config.py`, and
-the dashboard does not offer them as loaded choices yet. No CTA run has been
-made on either series.
+These CSVs can be loaded as `LME_ZN` and `LME_AL` in the dashboard. The model
+uses the same 20/60/120/252-session signals and 10/15/35/40% weights as copper.
+On the 8 October 2026 quotes, zinc scores +16.4 and aluminium −46.0 on the
+−100 to +100 risk-scaled model scale. These are inferred signal exposures,
+not observed CTA holdings.
 
 | File | Rows | First quote | Last quote | Latest quote |
 | --- | ---: | --- | --- | ---: |
