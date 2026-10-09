@@ -13,25 +13,40 @@ from cta_models.config import MARKETS
 from cta_models.scenarios import scenario_table, trigger_levels
 from dashboard.analytics import backtest, build_run, component_table, diagnostics
 
+HISTORICAL_CSV = Path(__file__).resolve().parent / "data" / "lme_copper_3m_westmetall_2008-2026_import.csv"
+HISTORICAL_LABEL = "LME copper history (2008–2026)"
 
 st.set_page_config(page_title="Copper CTA", page_icon="📈", layout="centered")
 st.title("Copper CTA")
 st.caption("Positioning research · manual updates")
 
+if "run" not in st.session_state:
+    try:
+        st.session_state["run"] = build_run("LME_CU", HISTORICAL_CSV.read_bytes())
+        st.session_state["run_origin"] = "historical"
+    except (OSError, ValueError, KeyError, IndexError, TypeError, UnicodeError) as error:
+        st.session_state["load_error"] = f"Included history could not be loaded: {error}"
+
 with st.expander("Load or refresh data", expanded="run" not in st.session_state):
     with st.form("load"):
         market = st.selectbox("Market", list(MARKETS))
-        source = st.radio("Input", ["Synthetic demo", "Upload CSV"])
+        source = st.radio("Input", [HISTORICAL_LABEL, "Synthetic demo", "Upload CSV"])
         upload = st.file_uploader("Daily prices CSV", type=["csv"])
         submitted = st.form_submit_button("Load / refresh", width="stretch")
     if submitted:
         try:
             if source == "Upload CSV" and upload is None:
                 raise ValueError("Choose a CSV before loading")
-            new_run = build_run(market, None if source == "Synthetic demo" else upload.getvalue())
+            if source == HISTORICAL_LABEL and market != "LME_CU":
+                raise ValueError("The included history is for LME_CU; select that market")
+            payload = (HISTORICAL_CSV.read_bytes() if source == HISTORICAL_LABEL else
+                       None if source == "Synthetic demo" else upload.getvalue())
+            new_run = build_run(market, payload)
             st.session_state["run"] = new_run
+            st.session_state["run_origin"] = ("historical" if source == HISTORICAL_LABEL else
+                                               "synthetic" if source == "Synthetic demo" else "upload")
             st.session_state.pop("load_error", None)
-        except (ValueError, KeyError, IndexError, TypeError, UnicodeError) as error:
+        except (OSError, ValueError, KeyError, IndexError, TypeError, UnicodeError) as error:
             st.session_state["load_error"] = str(error)
 
 if "load_error" in st.session_state:
@@ -46,8 +61,11 @@ latest = run.positions.iloc[-1]
 unit = MARKETS[snapshot.market].price_unit
 if run.synthetic:
     st.warning("SYNTHETIC DEMO — invented prices and performance. No historical or current market inference.")
+elif st.session_state.get("run_origin") == "historical":
+    st.info("WESTMETALL LME 3-MONTH HISTORY — one published daily quote, USD/t. The CSV's close field is an import alias, not a closing bar. No live feed or executable P&L is implied.")
 else:
     st.info("UPLOADED DATA — source and roll methodology are user supplied. No live feed is connected.")
+if not run.synthetic:
     age = (pd.Timestamp.now(tz="UTC").date() - snapshot.as_of.date()).days
     if age > 4 or age < 0:
         st.warning(f"Last observation is {snapshot.as_of.date()} (calendar age: {age} days). Check freshness and dates.")
@@ -145,7 +163,7 @@ else:
     st.subheader("Data and model diagnostics")
     st.dataframe(diagnostics(run), hide_index=True, width="stretch")
     st.caption("Date gaps are calendar gaps, not proof of missing exchange sessions. LME rolling prompt labels change daily; quote-label changes are not necessarily discrete futures rolls.")
-    st.caption("OHLC, positive prices, unique dates and required fields passed validation. This cannot verify the vendor's price or adjustment methodology.")
+    st.caption("Positive prices, unique dates and required fields passed validation. Complete OHLC bars were checked only if supplied. This cannot verify the vendor's price or adjustment methodology.")
     if "available_at" in run.prices:
         st.caption(f"Latest availability: {run.prices['available_at'].iloc[-1]}")
     st.subheader("Model settings")
