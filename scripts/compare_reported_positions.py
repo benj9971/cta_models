@@ -19,6 +19,7 @@ import pandas as pd
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
 from cta_models.data import load_csv
+from cta_models.charting import weekly_last_session
 from cta_models.indicators import rsi
 from cta_models.model import compute_positions, make_snapshot
 from cta_models.scenarios import scenario_table, trigger_levels
@@ -90,12 +91,16 @@ def build(market: str, data_dir: Path) -> tuple[pd.DataFrame, pd.DataFrame, pd.D
 
 
 def chart(market: str, daily: pd.DataFrame, weekly: pd.DataFrame, path: Path,
-          years: int | None = None) -> None:
+          years: int | None = None, frequency: str = "Daily") -> None:
+    if frequency not in {"Daily", "Weekly"}:
+        raise ValueError("Chart frequency must be Daily or Weekly")
     name, _, unit, color = MARKETS[market]
     if years is not None:
         start = daily["price_date"].iloc[-1] - pd.DateOffset(years=years)
         daily = daily.loc[daily["price_date"] >= start]
         weekly = weekly.loc[weekly["position_date"] >= start]
+    if frequency == "Weekly":
+        daily = weekly_last_session(daily, "price_date")
     fig, (top, mid, bottom) = plt.subplots(3, 1, figsize=(13.7, 10), sharex=True,
                                             gridspec_kw={"height_ratios": [1.55, 1.1, .8], "hspace": .12})
     fig.patch.set_facecolor("#f5f7fa")
@@ -113,13 +118,14 @@ def chart(market: str, daily: pd.DataFrame, weekly: pd.DataFrame, path: Path,
     report_ax.spines[["top", "left"]].set_visible(False)
     report_ax.axhline(0, color="#6c7b86", lw=.6)
     line2, = report_ax.plot(weekly["position_date"], weekly["reported_net_pct_oi"],
-                            color="#364c5c", marker="o", markersize=2.0, lw=1,
+                            color="#364c5c", marker="o" if years else None,
+                            markersize=2.0, lw=1,
                             label="Reported fund net / OI · right")
     report_ax.set_ylabel("Reported net · % open interest", color="#364c5c")
     top.legend([line1, line2], [line1.get_label(), line2.get_label()], loc="upper left",
                ncol=2, frameon=False, fontsize=9)
     mid.plot(daily["price_date"], daily["close"], color="#344b60", lw=1.25)
-    mid.set_ylabel(f"Daily quote · {unit}")
+    mid.set_ylabel(f"Quote · {unit}")
     bottom.axhspan(30, 70, color="#eff3f6", zorder=0)
     bottom.plot(daily["price_date"], daily["rsi14"], color="#7c6395", lw=1.1)
     bottom.axhline(30, color="#89959e", lw=.8, ls="--")
@@ -129,8 +135,9 @@ def chart(market: str, daily: pd.DataFrame, weekly: pd.DataFrame, path: Path,
     bottom.set_ylabel("RSI(14)")
     bottom.xaxis.set_major_locator(mdates.YearLocator(1 if years else 2))
     bottom.xaxis.set_major_formatter(mdates.DateFormatter("%Y"))
+    bottom.set_xlim(daily["price_date"].iloc[0], daily["price_date"].iloc[-1])
     latest = weekly.iloc[-1]
-    fig.suptitle(f"{name} · model vs reported positioning", x=.08, y=.992,
+    fig.suptitle(f"{name} · model vs reported positioning · {frequency.lower()} display", x=.08, y=.992,
                  ha="left", fontsize=18, fontweight="bold")
     fig.text(.08, .947, f"Model {daily['exposure'].iloc[-1]*100:+.1f} on {daily['price_date'].iloc[-1].date()}"
              f"    Reported net {latest['reported_net']:+,.0f} {latest['reported_unit']}"
@@ -149,6 +156,8 @@ def main() -> None:
     parser.add_argument("--data-dir", type=Path, default=DATA)
     parser.add_argument("--output-dir", type=Path, required=True)
     parser.add_argument("--markets", nargs="+", choices=MARKETS, default=list(MARKETS))
+    parser.add_argument("--full-frequency", choices=["Weekly", "Daily"], default="Weekly",
+                        help="Chart display only; daily model and RSI calculations are unchanged")
     args = parser.parse_args()
     args.output_dir.mkdir(parents=True, exist_ok=True)
     summaries = []
@@ -157,7 +166,8 @@ def main() -> None:
         stem = market.lower()
         weekly.to_csv(args.output_dir / f"{stem}_model_vs_reported_weekly.csv", index=False)
         for suffix, years in (("full", None), ("3y", 3)):
-            chart(market, daily, weekly, args.output_dir / f"{stem}_comparison_{suffix}.png", years)
+            chart(market, daily, weekly, args.output_dir / f"{stem}_comparison_{suffix}.png", years,
+                  args.full_frequency if years is None else "Daily")
         snapshot = make_snapshot(prices, daily.rename(columns={"price_date": "date"}))
         scenarios = scenario_table(snapshot)
         scenarios.to_csv(args.output_dir / f"{stem}_conditional_shocks.csv", index=False)
