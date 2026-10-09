@@ -13,16 +13,19 @@ from cta_models.config import MARKETS
 from cta_models.scenarios import scenario_table, trigger_levels
 from dashboard.analytics import backtest, build_run, component_table, diagnostics
 
-HISTORICAL_CSV = Path(__file__).resolve().parent / "data" / "lme_copper_3m_westmetall_2008-2026_import.csv"
-HISTORICAL_LABEL = "LME copper history (2008–2026)"
+HISTORICAL_FILES = {
+    "LME_CU": ("LME copper history (2008–2026)", Path(__file__).resolve().parent / "data" / "lme_copper_3m_westmetall_2008-2026_import.csv"),
+    "LME_NI": ("LME nickel history (2008–2026)", Path(__file__).resolve().parent / "data" / "lme_nickel_3m_westmetall_2008-2026_import.csv"),
+}
+HISTORICAL_LABELS = {label: (market, path) for market, (label, path) in HISTORICAL_FILES.items()}
 
-st.set_page_config(page_title="Copper CTA", page_icon="📈", layout="centered")
-st.title("Copper CTA")
+st.set_page_config(page_title="Metals CTA", page_icon="📈", layout="centered")
+st.title("Metals CTA")
 st.caption("Positioning research · manual updates")
 
 if "run" not in st.session_state:
     try:
-        st.session_state["run"] = build_run("LME_CU", HISTORICAL_CSV.read_bytes())
+        st.session_state["run"] = build_run("LME_CU", HISTORICAL_FILES["LME_CU"][1].read_bytes())
         st.session_state["run_origin"] = "historical"
     except (OSError, ValueError, KeyError, IndexError, TypeError, UnicodeError) as error:
         st.session_state["load_error"] = f"Included history could not be loaded: {error}"
@@ -30,20 +33,22 @@ if "run" not in st.session_state:
 with st.expander("Load or refresh data", expanded="run" not in st.session_state):
     with st.form("load"):
         market = st.selectbox("Market", list(MARKETS))
-        source = st.radio("Input", [HISTORICAL_LABEL, "Synthetic demo", "Upload CSV"])
+        source = st.radio("Input", [*HISTORICAL_LABELS, "Synthetic demo", "Upload CSV"])
         upload = st.file_uploader("Daily prices CSV", type=["csv"])
         submitted = st.form_submit_button("Load / refresh", width="stretch")
     if submitted:
         try:
             if source == "Upload CSV" and upload is None:
                 raise ValueError("Choose a CSV before loading")
-            if source == HISTORICAL_LABEL and market != "LME_CU":
-                raise ValueError("The included history is for LME_CU; select that market")
-            payload = (HISTORICAL_CSV.read_bytes() if source == HISTORICAL_LABEL else
+            if source in HISTORICAL_LABELS and market != HISTORICAL_LABELS[source][0]:
+                raise ValueError(f"The selected history is for {HISTORICAL_LABELS[source][0]}; select that market")
+            if source == "Synthetic demo" and market == "LME_NI":
+                raise ValueError("The synthetic demo is for copper only; choose nickel history or upload a nickel CSV")
+            payload = (HISTORICAL_LABELS[source][1].read_bytes() if source in HISTORICAL_LABELS else
                        None if source == "Synthetic demo" else upload.getvalue())
             new_run = build_run(market, payload)
             st.session_state["run"] = new_run
-            st.session_state["run_origin"] = ("historical" if source == HISTORICAL_LABEL else
+            st.session_state["run_origin"] = ("historical" if source in HISTORICAL_LABELS else
                                                "synthetic" if source == "Synthetic demo" else "upload")
             st.session_state.pop("load_error", None)
         except (OSError, ValueError, KeyError, IndexError, TypeError, UnicodeError) as error:
@@ -63,6 +68,8 @@ if run.synthetic:
     st.warning("SYNTHETIC DEMO — invented prices and performance. No historical or current market inference.")
 elif st.session_state.get("run_origin") == "historical":
     st.info("WESTMETALL LME 3-MONTH HISTORY — one published daily quote, USD/t. The CSV's close field is an import alias, not a closing bar. No live feed or executable P&L is implied.")
+    if snapshot.market == "LME_NI":
+        st.warning("NICKEL DATA NOTE — March 2022 has no published three-month quote from 8–25 March in this source. The March 7 squeeze and March 28 resumption are separated by a 21-day gap. Model signals span observed sessions; proxy backtest returns across this interval are not executable.")
 else:
     st.info("UPLOADED DATA — source and roll methodology are user supplied. No live feed is connected.")
 if not run.synthetic:
