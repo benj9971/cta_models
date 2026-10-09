@@ -40,6 +40,10 @@ in the load form. **Price scenarios** evaluates the loaded market, **Diagnostics
 shows its input checks, and **Backtests** provides research-only tests where
 permitted by the loaded data. There is no automatic price or positioning update
 on dashboard startup; refresh the source scripts and reload the CSVs to update.
+The Positioning view defaults to weekly chart display, and the Reported comparison
+view offers Daily/Weekly on full history (weekly by default). Weekly retains the
+last observed session of each week for model score, quote and RSI; it does not
+change the daily model or downloadable history. Three-year comparisons remain daily.
 
 ## Model definition
 
