@@ -33,7 +33,7 @@ python -m streamlit run dashboard/app.py
 ```
 
 Open the local URL printed by Streamlit. **Positioning** shows the loaded
-market's model, quote and RSI; **Reported comparison** has the six-market
+market's model, quote and RSI; **Reported comparison** has the eight-market
 dual-axis model versus exchange positioning charts, price, RSI, and conditional
 price levels. Its charts use bundled inputs independently of the market selected
 in the load form. **Price scenarios** evaluates the loaded market, **Diagnostics**
@@ -102,11 +102,18 @@ The included Yahoo continuous futures quotes are signal-only proxies and their
 backtests are disabled. The LME three-month price imports are published quotes,
 not an executable contract-level return series.
 
-Compare platinum, gold, silver, nickel, aluminium and LME copper model scores against the
+Compare platinum, gold, silver, nickel, zinc, aluminium, LME copper and COMEX copper model scores against the
 reported fund categories, with price and RSI panels, using
 `python scripts/compare_reported_positions.py --output-dir output/position_comparison`.
 See `docs/model_vs_reported.md` for position-date alignment, publication lags,
 scenario levels and the limits of interpreting a model threshold as a stop.
+
+Latest refresh and validation review: see `docs/cta_review_2026-10-14.md`.
+To refresh recent LME reports and the current 2026 quote pages without
+re-downloading the complete report archive, run
+`python scripts/refresh_lme_recent.py --as-of 2026-10-13`.
+Coverage and rolling-window descriptive diagnostics can be reproduced with
+`python scripts/audit_coverage.py --output-dir output/audit`.
 
 Before interpreting futures P&L or estimated CTA contracts we still need
 verified contract settlements, roll and expiration rules, available-at

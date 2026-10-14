@@ -67,10 +67,11 @@ class DashboardAnalyticsTests(unittest.TestCase):
         path = Path(__file__).resolve().parents[1] / "dashboard" / "data" / "lme_nickel_3m_westmetall_2008-2026_import.csv"
         run = build_run("LME_NI", path.read_bytes())
         self.assertEqual(MARKETS["LME_NI"].contract_size_tonnes, 6.0)
-        self.assertEqual(len(run.prices), 4615)
+        history = pd.read_csv(path)
+        self.assertEqual(len(run.prices), len(history))
         self.assertEqual(run.prices["date"].iloc[0], pd.Timestamp("2008-06-17"))
-        self.assertEqual(run.prices["date"].iloc[-1], pd.Timestamp("2026-10-08"))
-        self.assertEqual(run.positions["exposure"].notna().sum(), 4363)
+        self.assertEqual(run.prices["date"].iloc[-1], pd.to_datetime(history['date']).max())
+        self.assertEqual(run.positions["exposure"].notna().sum(), len(history) - 252)
         self.assertEqual(run.prices["date"].diff().dt.days.max(), 21)
         self.assertAlmostEqual(run.snapshot.at_price(run.snapshot.raw_price)[0],
                                run.positions["exposure"].iloc[-1])
@@ -85,9 +86,11 @@ class DashboardUITests(unittest.TestCase):
     def test_included_history_and_manual_load(self):
         app = self.app()
         self.assertFalse(app.exception)
-        self.assertEqual(len(app.session_state["run"].prices), 4743)
+        from scripts.compare_reported_positions import DATA, MARKETS
+        history = pd.read_csv(DATA / MARKETS['LME_CU'][1])
+        self.assertEqual(len(app.session_state["run"].prices), len(history))
         self.assertFalse(app.session_state["run"].synthetic)
-        self.assertEqual(str(app.session_state["run"].snapshot.as_of.date()), "2026-10-08")
+        self.assertEqual(app.session_state["run"].snapshot.as_of, pd.to_datetime(history['date']).max())
         next(r for r in app.radio if "Synthetic demo" in r.options).set_value("Synthetic demo")
         app.button[0].click().run()
         self.assertFalse(app.exception)
@@ -142,10 +145,12 @@ class DashboardUITests(unittest.TestCase):
         app.button[0].click().run()
         self.assertFalse(app.exception)
         self.assertEqual(app.session_state["run"].snapshot.market, "LME_NI")
-        self.assertEqual(len(app.session_state["run"].prices), 4615)
+        from scripts.compare_reported_positions import DATA, MARKETS
+        history = pd.read_csv(DATA / MARKETS['LME_NI'][1])
+        self.assertEqual(len(app.session_state["run"].prices), len(history))
         self.assertTrue(app.warning)
 
-    def test_reported_comparison_for_six_metals_and_rsi(self):
+    def test_reported_comparison_for_eight_markets_and_rsi(self):
         app = self.app()
         self.assertTrue(any(s.value == "RSI(14) · daily calculation" for s in app.subheader))
         next(r for r in app.radio if "Reported comparison" in r.options).set_value("Reported comparison").run()
@@ -153,7 +158,7 @@ class DashboardUITests(unittest.TestCase):
         self.assertFalse(app.error)
         self.assertTrue(any(s.value == "Conditional price levels" for s in app.subheader))
         self.assertEqual(len(app.dataframe), 2)
-        for market in ("NYMEX_PL", "COMEX_GC", "COMEX_SI", "LME_NI", "LME_AL", "LME_CU"):
+        for market in ("NYMEX_PL", "COMEX_GC", "COMEX_SI", "LME_NI", "LME_AL", "LME_ZN", "LME_CU", "COMEX_HG"):
             next(s for s in app.selectbox if s.label == "Comparison market").set_value(market).run()
             self.assertFalse(app.exception)
             self.assertFalse(app.error)
