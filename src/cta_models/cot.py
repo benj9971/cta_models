@@ -16,7 +16,7 @@ from urllib.parse import urlencode
 from urllib.request import urlopen
 
 API = "https://publicreporting.cftc.gov/resource/72hh-3qpy.json"
-MARKETS = {"085692": "COMEX_HG", "076651": "NYMEX_PL",
+MARKETS = {"085692": "COMEX_HG", "076651": "NYMEX_PL", "075651": "NYMEX_PA",
            "088691": "COMEX_GC", "084691": "COMEX_SI"}
 DEFAULT_MARKETS = ("COMEX_HG", "NYMEX_PL")
 FIELDS = (
