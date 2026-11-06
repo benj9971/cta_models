@@ -28,3 +28,20 @@ was removed. Rows with an absent three-month price were omitted, including
 aluminium on 13 October 2011. Missing values were not interpolated or filled
 with cash prices. Both CSVs have unique, increasing weekday dates, positive
 prices, and no gap longer than five calendar days after their start.
+
+## Lead and palladium (added 6 November 2026)
+
+`lme_lead_3m_westmetall_2008-2026_staged.csv` (`LME_PB`, 4,649 quotes,
+2008-06-17 to 2026-11-05) was built by `scripts/update_lme_3m.py --full` from
+Westmetall's yearly lead tables, using only the `LME Lead 3-month` column and
+the same rules as zinc and aluminium (weekend repeats and absent quotes dropped,
+nothing filled, series started after the last 2008 gap longer than ten days).
+
+`nymex_pa_yahoo_research_proxy.csv` (`NYMEX_PA`, 4,197 sessions, 2010-03-01 to
+2026-11-06) is Yahoo's PA=F continuous future, unverified contract mapping and
+roll, started after its last pre-2010 gap. CFTC disaggregated palladium is code
+075651.
+
+`scripts/update_lme_3m.py` refreshes all five LME series from Westmetall alone
+(lme.com is blocked from the scheduled sessions), and `run_proxy_models.py` now
+accepts the LME markets and a `--no-charts` flag.

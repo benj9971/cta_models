@@ -1,6 +1,6 @@
 """Fetch Yahoo continuous futures closes for *signal-only* research.
 
-HG=F, GC=F, SI=F and PL=F represent vendor continuous COMEX/NYMEX futures. TIO=F is a
+HG=F, GC=F, SI=F, PL=F and PA=F represent vendor continuous COMEX/NYMEX futures. TIO=F is a
 CME iron-ore future used only as a proxy for SGX iron ore; it is NOT SGX FEF.
 Contract transitions and adjustment methodology are not verified. Never infer
 executable P&L from these CSVs. Yahoo availability and usage terms may change.
@@ -17,6 +17,7 @@ from urllib.request import Request, urlopen
 MARKETS = {
     "COMEX_HG": ("HG=F", "USD/lb", 100.0),
     "NYMEX_PL": ("PL=F", "USD/troy oz", 1.0),
+    "NYMEX_PA": ("PA=F", "USD/troy oz", 1.0),
     "COMEX_GC": ("GC=F", "USD/troy oz", 1.0),
     "COMEX_SI": ("SI=F", "USD/troy oz", 1.0),
     "SGX_IO62": ("TIO=F", "USD/dmt", 1.0),
@@ -43,9 +44,11 @@ def fetch(market, as_of):
     rows = []
     for timestamp, price in zip(result["timestamp"], close, strict=True):
         when = datetime.fromtimestamp(timestamp, tz=timezone.utc).date()
-        # Yahoo's older platinum history has repeated 1–3 month quote gaps.
-        # Start the model-ready file where its daily coverage becomes regular.
-        if price is None or when > as_of or (market == "NYMEX_PL" and when < date(2010, 1, 1)):
+        # Yahoo's older platinum and palladium histories have repeated 1–3 month
+        # quote gaps. Start the model-ready file where daily coverage becomes regular
+        # (palladium's last gap >6 days ends 22 Feb 2010).
+        if price is None or when > as_of or (market == "NYMEX_PL" and when < date(2010, 1, 1)) \
+                or (market == "NYMEX_PA" and when < date(2010, 3, 1)):
             continue
         value = float(price) * factor
         if value <= 0:
