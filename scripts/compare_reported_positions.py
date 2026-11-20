@@ -29,6 +29,7 @@ DATA = Path(__file__).resolve().parents[1] / "dashboard" / "data"
 MARKETS = {
     "COMEX_HG": ("COMEX copper", "comex_hg_yahoo_research_proxy.csv", "US cents/lb", "#a76736"),
     "NYMEX_PL": ("NYMEX platinum", "nymex_pl_yahoo_research_proxy.csv", "USD/troy oz", "#6176a9"),
+    "NYMEX_PA": ("NYMEX palladium", "nymex_pa_yahoo_research_proxy.csv", "USD/troy oz", "#8a6f8f"),
     "COMEX_GC": ("COMEX gold", "comex_gc_yahoo_research_proxy.csv", "USD/troy oz", "#b99a45"),
     "COMEX_SI": ("COMEX silver", "comex_si_yahoo_research_proxy.csv", "USD/troy oz", "#778792"),
     "LME_NI": ("LME nickel", "lme_nickel_3m_westmetall_2008-2026_import.csv", "USD/t", "#8573a1"),
@@ -39,7 +40,7 @@ MARKETS = {
 
 
 def reported(data_dir: Path, market: str) -> pd.DataFrame:
-    if market in {"COMEX_HG", "NYMEX_PL", "COMEX_GC", "COMEX_SI"}:
+    if market in {"COMEX_HG", "NYMEX_PL", "NYMEX_PA", "COMEX_GC", "COMEX_SI"}:
         cot_file = ("cftc_disaggregated_futures_only_gc_si.csv" if market in {"COMEX_GC", "COMEX_SI"}
                     else "cftc_disaggregated_futures_only_hg_pl.csv")
         reports = pd.read_csv(data_dir / cot_file)

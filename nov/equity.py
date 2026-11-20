@@ -7,16 +7,22 @@ from cta_models.indicators import rsi
 import fetch_research_price_proxies as vendor
 import pandas as pd, numpy as np, requests
 from concurrent.futures import ThreadPoolExecutor
+import argparse
+ap=argparse.ArgumentParser(description='Fetch ES/NQ Yahoo continuous quotes and CFTC TFF leveraged-fund positions, then run the model. Defaults reproduce the 4 November 2026 vintage.')
+ap.add_argument('--as-of',default='2026-11-03',help='last completed price session to include (YYYY-MM-DD)')
+ap.add_argument('--report-start',default='2023-10-01',help='first CFTC position date (YYYY-MM-DD)')
+ap.add_argument('--report-end',default='2026-10-27',help='last CFTC position date (YYYY-MM-DD)')
+args=ap.parse_args()
 out=Path('nov')
 def run(pair):
  symbol,code,name,mult=pair
  m='CME_'+symbol
  MARKETS[m]=Market(m,'CME',name,'USD','index points',mult,'USD per index point','quarterly')
  vendor.MARKETS[m]=(symbol+'=F','index points',1.)
- rows,_=vendor.fetch(m,dt.date(2026,11,3))
+ rows,_=vendor.fetch(m,dt.date.fromisoformat(args.as_of))
  prices=pd.DataFrame(rows); prices.to_csv(Path('dashboard/data')/f'{m}_vendor.csv',index=False)
  daily=compute_positions(prices);daily['rsi14']=rsi(daily.close);daily.to_csv(out/f'{m}_daily.csv',index=False)
- q=requests.get('https://publicreporting.cftc.gov/resource/gpe5-46if.json',params={'$where':f"cftc_contract_market_code='{code}' and report_date_as_yyyy_mm_dd >= '2023-10-01' and report_date_as_yyyy_mm_dd <= '2026-10-27'",'$limit':1000,'$order':'report_date_as_yyyy_mm_dd'},timeout=35);q.raise_for_status()
+ q=requests.get('https://publicreporting.cftc.gov/resource/gpe5-46if.json',params={'$where':f"cftc_contract_market_code='{code}' and report_date_as_yyyy_mm_dd >= '{args.report_start}' and report_date_as_yyyy_mm_dd <= '{args.report_end}'",'$limit':1000,'$order':'report_date_as_yyyy_mm_dd'},timeout=35);q.raise_for_status()
  d=pd.DataFrame(q.json());print(m,d.market_and_exchange_names.unique(),[k for k in d if 'lev_money' in k][:8],flush=True)
  assert d.cftc_contract_market_code.eq(code).all() and len(d)>150
  d['position_date']=pd.to_datetime(d.report_date_as_yyyy_mm_dd);assert d.position_date.is_unique
